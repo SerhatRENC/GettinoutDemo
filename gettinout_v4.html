@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GettinOut — Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --red:#E8294A;--red2:#FF4D6A;--reddim:rgba(232,41,74,0.14);
+  --d1:#0E0E0E;--d2:#161616;--d3:#1E1E1E;--d4:#262626;
+  --b1:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.12);
+  --t1:#F0EDE8;--t2:#888;--t3:#555;
+  --gold:#F5C518;--green:#3CCD64;--blue:#4A9EFF;--purple:#9B6FFF;
+}
+
+/* PAGE */
+body{background:#080808;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;color:var(--t1);}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(232,41,74,0.08),transparent 70%);pointer-events:none;}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:12px;padding:28px 16px 60px;}
+.scene-lbl{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--red);opacity:.7;}
+
+/* PHONE SHELL */
+.phone{
+  width:375px;height:780px;
+  background:var(--d2);
+  border-radius:48px;
+  border:1.5px solid rgba(255,255,255,0.08);
+  box-shadow:0 0 0 8px #111,0 0 0 9px rgba(255,255,255,0.04),0 40px 100px rgba(0,0,0,.85);
+  overflow:hidden;
+  position:relative;
+}
+
+/* DYNAMIC ISLAND */
+.di{
+  position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  width:120px;height:34px;background:#000;border-radius:20px;z-index:200;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.di-cam{width:10px;height:10px;background:#1a1a1a;border-radius:50%;border:1px solid #2a2a2a;}
+.di-dot{width:6px;height:6px;background:#1a261a;border-radius:50%;}
+
+/* STATUS BAR */
+.sb{
+  position:absolute;top:0;left:0;right:0;height:54px;z-index:150;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 28px 8px;font-size:12px;font-weight:600;pointer-events:none;
+}
+.sb-time{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
+.sb-icons{display:flex;gap:5px;align-items:center;font-size:11px;}
+
+/* ── SCREENS ──
+   KEY RULE: each screen is absolute, fills the phone, scrolls internally.
+   NO flex/grid on the screen itself — only on its children.
+*/
+.screens{position:absolute;inset:0;}
+
+.scr{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:none;
+  opacity:0;pointer-events:none;
+  transition:opacity .22s ease;
+  /* padding-top makes room for status bar */
+  padding-top:54px;
+  /* padding-bottom makes room for bottom nav */
+  padding-bottom:0;
+}
+.scr::-webkit-scrollbar{display:none;}
+.scr.active{opacity:1;pointer-events:all;}
+.scr.ani-in{animation:aniIn .26s ease both;}
+.scr.ani-back{animation:aniBack .26s ease both;}
+@keyframes aniIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@keyframes aniBack{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
+
+/* BOTTOM NAV */
+.bnav{
+  position:absolute;bottom:0;left:0;right:0;height:80px;
+  background:rgba(10,10,10,0.97);backdrop-filter:blur(20px);
+  border-top:1px solid var(--b1);
+  display:flex;align-items:flex-start;justify-content:space-around;
+  padding-top:10px;z-index:100;
+}
+.ni{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 14px;cursor:pointer;opacity:.38;transition:opacity .18s;position:relative;}
+.ni.on{opacity:1;}
+.ni-ico{font-size:20px;line-height:1;}
+.ni-lbl{font-size:9px;font-weight:500;color:var(--t2);}
+.ni.on .ni-lbl{color:var(--red);}
+.ni.on::after{content:'';position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);width:4px;height:4px;background:var(--red);border-radius:50%;}
+.ni-plus{width:44px;height:44px;background:var(--red);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-top:-16px;box-shadow:0 4px 16px rgba(232,41,74,.5);}
+
+/* TOAST */
+.toast{
+  position:absolute;bottom:88px;left:20px;right:20px;
+  background:rgba(26,26,26,0.97);border:1px solid var(--b2);
+  border-radius:14px;padding:11px 16px;
+  font-size:12px;font-weight:500;
+  z-index:400;
+  transform:translateY(110px);opacity:0;
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);
+}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* ─── SHARED ATOMS ─── */
+.pad-b{height:90px;}
+.btn-red{width:100%;background:var(--red);color:#fff;border:none;border-radius:14px;padding:15px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(232,41,74,.38);transition:transform .15s;}
+.btn-red:active{transform:scale(.97);}
+.btn-ghost{width:100%;background:transparent;color:var(--t2);border:1.5px solid var(--b2);border-radius:14px;padding:14px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.card{background:var(--d3);border:1px solid var(--b1);border-radius:16px;}
+.pbar{padding:8px 20px 0;display:flex;align-items:center;justify-content:space-between;}
+.pbar-t{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
+.back-btn{width:36px;height:36px;background:var(--d3);border:1px solid var(--b2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;}
+.sec-h{padding:14px 20px 8px;display:flex;justify-content:space-between;align-items:center;}
+.sec-t{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
+.sec-a{font-size:11px;color:var(--red);font-weight:500;cursor:pointer;}
+.pill{display:inline-block;border-radius:6px;padding:3px 9px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.pill.gastro{background:rgba(232,112,67,.2);color:#E87043;}
+.pill.kultur{background:rgba(74,158,255,.2);color:var(--blue);}
+.pill.doga{background:rgba(60,205,100,.2);color:var(--green);}
+.pill.gece{background:rgba(155,111,255,.2);color:var(--purple);}
+.pill.sanat{background:rgba(255,112,67,.2);color:#FF7043;}
+.pill.sure{background:var(--b1);color:var(--t2);}
+.pill.free{background:rgba(60,205,100,.15);color:var(--green);}
+.pill.credit{background:rgba(245,197,24,.15);color:var(--gold);}
+.pfree{color:var(--green);font-size:9px;font-weight:700;}
+.pcred{color:var(--gold);font-size:9px;font-weight:700;}
+
+/* ════════════════════════════
+   SPLASH
+════════════════════════════ */
+#splash{background:var(--d2);}
+.sp-inner{
+  min-height:calc(780px - 54px);
+  display:flex;flex-direction:column;
+  align-items:center;
+  padding:32px 28px 40px;
+  position:relative;
+}
+.sp-glow{
+  position:absolute;top:-60px;left:50%;transform:translateX(-50%);
+  width:280px;height:280px;
+  background:radial-gradient(circle,rgba(232,41,74,.22) 0%,transparent 65%);
+  pointer-events:none;
+}
+.sp-icon{
+  width:80px;height:80px;
+  background:linear-gradient(135deg,var(--red),#b01830);
+  border-radius:24px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:38px;
+  box-shadow:0 14px 40px rgba(232,41,74,.45);
+  animation:float 3s ease-in-out infinite;
+  position:relative;z-index:1;
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.sp-logo{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;margin-top:14px;position:relative;z-index:1;}
+.sp-logo em{color:var(--red);font-style:normal;}
+.sp-tag{font-size:12px;color:var(--t2);letter-spacing:2px;font-style:italic;margin-top:4px;position:relative;z-index:1;}
+.sp-feats{width:100%;display:flex;flex-direction:column;gap:10px;margin-top:24px;margin-bottom:16px;position:relative;z-index:1;}
+.sp-feat{
+  background:var(--d3);border:1px solid var(--b1);border-radius:14px;
+  padding:13px 15px;display:flex;align-items:center;gap:12px;
+}
+.sp-feat-ico{font-size:22px;flex-shrink:0;}
+.sp-feat-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.sp-feat-d{font-size:11px;color:var(--t2);margin-top:2px;}
+.sp-cr{
+  width:100%;
+  background:rgba(245,197,24,.08);border:1px solid rgba(245,197,24,.22);
+  border-radius:14px;padding:13px 15px;
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:20px;position:relative;z-index:1;
+}
+.sp-cr-ico{font-size:24px;}
+.sp-cr-t{font-size:12px;color:var(--gold);font-weight:500;line-height:1.4;flex:1;}
+.sp-cr-t strong{font-size:15px;font-weight:700;}
+.sp-btns{width:100%;display:flex;flex-direction:column;gap:10px;position:relative;z-index:1;}
+
+/* ════════════════════════════
+   ONBOARDING
+════════════════════════════ */
+#ob1,#ob2,#ob3{background:var(--d2);}
+.ob-inner{
+  min-height:calc(780px - 54px);
+  display:flex;flex-direction:column;
+  padding:24px 28px 40px;
+}
+.ob-steps{display:flex;gap:6px;margin-bottom:28px;}
+.ob-step{flex:1;height:3px;border-radius:2px;background:var(--b2);}
+.ob-step.done{background:var(--red);}
+.ob-step.act{background:var(--red2);}
+.ob-icon{
+  width:68px;height:68px;border-radius:22px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;margin-bottom:18px;
+}
+.ob-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;line-height:1.2;margin-bottom:8px;}
+.ob-sub{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:24px;}
+.ob-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+.ob-item{
+  background:var(--d3);border:2px solid var(--b1);border-radius:16px;
+  padding:16px 8px;text-align:center;cursor:pointer;transition:all .18s;
+}
+.ob-item.sel{border-color:var(--red);background:var(--reddim);}
+.ob-item:active{transform:scale(.94);}
+.ob-emoji{font-size:26px;margin-bottom:7px;}
+.ob-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;}
+.ob-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.ob-list-item{
+  background:var(--d3);border:2px solid var(--b1);border-radius:14px;
+  padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .18s;
+}
+.ob-list-item.sel{border-color:var(--red);background:var(--reddim);}
+.ob-list-item:active{transform:scale(.98);}
+.ob-list-ico{font-size:26px;}
+.ob-list-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.ob-list-d{font-size:11px;color:var(--t2);margin-top:2px;}
+.ob-spacer{flex:1;}
+.ob-skip{font-size:11px;color:var(--t3);text-align:center;margin-top:12px;cursor:pointer;}
+
+/* ════════════════════════════
+   HOME
+════════════════════════════ */
+#home{background:var(--d2);}
+.home-top{padding:10px 20px 0;display:flex;justify-content:space-between;align-items:center;}
+.h-greeting-sm{font-size:11px;color:var(--t2);margin-bottom:2px;}
+.h-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;}
+.h-right{display:flex;gap:8px;align-items:center;}
+.notif-btn{
+  width:36px;height:36px;background:var(--d3);border:1px solid var(--b2);
+  border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:16px;cursor:pointer;position:relative;
+}
+.notif-dot{position:absolute;top:6px;right:7px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid var(--d2);}
+.cr-pill{
+  background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.25);
+  border-radius:20px;padding:6px 12px;
+  display:flex;align-items:center;gap:4px;
+  font-size:12px;font-weight:600;color:var(--gold);cursor:pointer;
+}
+.h-search{
+  margin:12px 20px 0;background:var(--d3);border:1px solid var(--b1);
+  border-radius:14px;padding:11px 14px;
+  display:flex;align-items:center;gap:10px;cursor:pointer;
+}
+.h-search-txt{flex:1;font-size:13px;color:var(--t3);}
+.h-search-filter{width:32px;height:32px;background:var(--red);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.cats{display:flex;gap:8px;padding:12px 20px 0;overflow-x:auto;}
+.cats::-webkit-scrollbar{display:none;}
+.cat{
+  background:var(--d3);border:1px solid var(--b1);border-radius:20px;
+  padding:7px 14px;font-size:11px;font-weight:500;color:var(--t2);
+  white-space:nowrap;cursor:pointer;transition:all .15s;flex-shrink:0;
+}
+.cat.on{background:var(--red);border-color:var(--red);color:#fff;}
+/* hero card */
+.hero-card{
+  margin:0 20px;border-radius:20px;overflow:hidden;
+  position:relative;height:196px;cursor:pointer;transition:transform .18s;
+}
+.hero-card:active{transform:scale(.98);}
+.hc-bg{position:absolute;inset:0;}
+.hc-noise{position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,rgba(232,41,74,.025) 0,rgba(232,41,74,.025) 1px,transparent 1px,transparent 20px);}
+.hc-emoji{position:absolute;right:18px;top:16px;font-size:76px;opacity:.2;line-height:1;}
+.hc-pills{position:absolute;top:16px;left:16px;display:flex;gap:6px;}
+.hc-body{
+  position:absolute;bottom:0;left:0;right:0;padding:15px;
+  background:linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%);
+}
+.hc-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:5px;}
+.hc-meta{display:flex;align-items:center;gap:7px;font-size:11px;color:rgba(255,255,255,.55);}
+.mdot{width:3px;height:3px;background:var(--t3);border-radius:50%;}
+.hc-creator{display:flex;align-items:center;gap:6px;margin-top:6px;}
+.mini-ava{width:20px;height:20px;background:linear-gradient(135deg,var(--red),#f80);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;}
+/* small route cards */
+.rrow{display:flex;gap:10px;padding:0 20px;overflow-x:auto;}
+.rrow::-webkit-scrollbar{display:none;}
+.rcard{
+  min-width:148px;max-width:148px;flex-shrink:0;
+  background:var(--d3);border:1px solid var(--b1);border-radius:16px;
+  overflow:hidden;cursor:pointer;transition:transform .15s;
+}
+.rcard:active{transform:scale(.95);}
+.ri{height:88px;display:flex;align-items:center;justify-content:center;font-size:38px;position:relative;}
+.ri.g1{background:linear-gradient(135deg,#2d150a,#160a05);}
+.ri.g2{background:linear-gradient(135deg,#0a152d,#050a18);}
+.ri.g3{background:linear-gradient(135deg,#0a2014,#05100a);}
+.ri.g4{background:linear-gradient(135deg,#1a0a2d,#0d0516);}
+.ri.g5{background:linear-gradient(135deg,#2d200a,#161005);}
+.ri-tag{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);border-radius:6px;padding:2px 7px;font-size:8px;color:rgba(255,255,255,.8);font-weight:500;}
+.rb{padding:10px 10px 12px;}
+.rb-t{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#fff;line-height:1.2;}
+.rb-m{font-size:9px;color:var(--t2);margin-top:3px;}
+.rb-f{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+.rb-r{font-size:9px;color:var(--gold);font-weight:600;}
+/* trending */
+.trlist{padding:0 20px;display:flex;flex-direction:column;gap:8px;}
+.tri{
+  background:var(--d3);border:1px solid var(--b1);border-radius:14px;
+  padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:transform .15s;
+}
+.tri:active{transform:scale(.98);}
+.tri-n{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--b2);min-width:22px;}
+.tri-e{font-size:24px;}
+.tri-info{flex:1;}
+.tri-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.tri-m{font-size:10px;color:var(--t2);margin-top:2px;}
+.tri-b{font-size:9px;font-weight:600;color:var(--green);}
+
+/* ════════════════════════════
+   ARAMA
+════════════════════════════ */
+#arama{background:var(--d2);}
+.ara-top{padding:10px 20px 0;display:flex;gap:10px;align-items:center;}
+.ara-box{flex:1;background:var(--d3);border:1px solid var(--b2);border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:8px;}
+.ara-box input{background:none;border:none;outline:none;flex:1;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--t1);}
+.ara-box input::placeholder{color:var(--t3);}
+.ara-cancel{font-size:13px;color:var(--red);font-weight:600;cursor:pointer;white-space:nowrap;}
+.fs{padding:14px 20px 0;}
+.fs-t{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--t2);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px;}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.chip{background:var(--d3);border:1.5px solid var(--b1);border-radius:20px;padding:7px 13px;font-size:12px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .15s;}
+.chip.on{border-color:var(--red);color:var(--red);background:var(--reddim);}
+.rbrow{display:flex;gap:8px;margin-bottom:14px;}
+.rb-btn{flex:1;background:var(--d3);border:1.5px solid var(--b1);border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s;}
+.rb-btn.on{border-color:var(--red);background:var(--reddim);}
+.rb-btn-v{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.rb-btn-k{font-size:9px;color:var(--t2);margin-top:2px;}
+.tgls{background:var(--d3);border:1px solid var(--b1);border-radius:14px;padding:4px 14px;}
+.tgl-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--b1);}
+.tgl-row:last-child{border:none;}
+.tgl-lbl{font-size:13px;font-weight:500;}
+.tgl-sub{font-size:10px;color:var(--t2);margin-top:2px;}
+.tgl{width:44px;height:26px;background:var(--d4);border-radius:13px;position:relative;cursor:pointer;transition:background .18s;}
+.tgl.on{background:var(--red);}
+.tgl::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .18s;box-shadow:0 1px 4px rgba(0,0,0,.3);}
+.tgl.on::after{transform:translateX(18px);}
+.ara-results{padding:0 20px;display:flex;flex-direction:column;gap:8px;}
+.ar-item{
+  background:var(--d3);border:1px solid var(--b1);border-radius:14px;
+  padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:transform .15s;
+}
+.ar-item:active{transform:scale(.98);}
+.ar-r{text-align:right;}
+.ar-rating{font-size:10px;color:var(--gold);font-weight:600;}
+.ar-price{font-size:10px;font-weight:700;margin-top:2px;}
+.no-res{text-align:center;padding:40px 20px;color:var(--t2);}
+.no-res .nr-ico{font-size:40px;margin-bottom:12px;}
+.no-res .nr-t{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--t1);margin-bottom:6px;}
+
+/* ════════════════════════════
+   ROTA DETAY
+════════════════════════════ */
+#rota-detay{background:var(--d2);}
+.rd-hero{height:200px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.rd-hbg{position:absolute;inset:0;}
+.rd-emoji{font-size:88px;position:relative;z-index:1;opacity:.8;}
+.rd-fade{position:absolute;inset:0;background:linear-gradient(to top,var(--d2) 0%,transparent 55%);z-index:2;}
+.rd-back{position:absolute;top:14px;left:14px;width:36px;height:36px;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;z-index:10;}
+.rd-save{position:absolute;top:14px;right:14px;width:36px;height:36px;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;z-index:10;transition:background .18s;}
+.rd-save.saved{background:rgba(232,41,74,.35);}
+.rd-body{padding:0 20px;}
+.rd-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.rd-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;line-height:1.2;margin-bottom:10px;}
+.rd-creator{
+  display:flex;align-items:center;gap:10px;
+  background:var(--d3);border:1px solid var(--b1);border-radius:14px;padding:10px 13px;
+  cursor:pointer;margin-bottom:14px;
+}
+.rd-cr-ava{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;}
+.rd-cr-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.rd-cr-sub{font-size:10px;color:var(--t2);margin-top:1px;}
+.rd-stats{display:flex;gap:8px;margin-bottom:14px;}
+.rdst{flex:1;background:var(--d3);border:1px solid var(--b1);border-radius:12px;padding:11px 6px;text-align:center;}
+.rdst-v{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;}
+.rdst-k{font-size:9px;color:var(--t2);margin-top:2px;}
+.rd-desc{font-size:13px;color:rgba(255,255,255,.6);line-height:1.6;margin-bottom:14px;}
+.stops-lbl{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:11px;}
+.stop-row{display:flex;align-items:flex-start;gap:11px;margin-bottom:11px;position:relative;}
+.stop-row::before{content:'';position:absolute;left:12px;top:26px;width:1px;height:calc(100% + 3px);background:var(--b1);}
+.stop-row:last-child::before{display:none;}
+.sdot{width:25px;height:25px;min-width:25px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;z-index:1;}
+.sdot.red{background:var(--red);color:#fff;}
+.sdot.dim{background:var(--d3);color:var(--t2);border:1px solid var(--b1);}
+.scard{flex:1;background:var(--d3);border:1px solid var(--b1);border-radius:13px;padding:10px 12px;}
+.scard-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.scard-d{font-size:11px;color:var(--t2);margin-top:2px;line-height:1.4;}
+.scard-bs{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;}
+.sb{font-size:8px;padding:2px 7px;border-radius:5px;font-weight:600;}
+.sb.p{background:rgba(245,197,24,.12);color:var(--gold);border:1px solid rgba(245,197,24,.25);}
+.sb.d{background:rgba(60,205,100,.12);color:var(--green);border:1px solid rgba(60,205,100,.25);}
+.sb.t{background:rgba(74,158,255,.12);color:var(--blue);border:1px solid rgba(74,158,255,.25);}
+.reviews-lbl{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin:14px 0 10px;}
+.rv{background:var(--d3);border:1px solid var(--b1);border-radius:13px;padding:11px 13px;margin-bottom:8px;}
+.rv-top{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.rv-ava{width:27px;height:27px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+.rv-name{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;flex:1;}
+.rv-stars{font-size:10px;color:var(--gold);}
+.rv-text{font-size:11px;color:rgba(255,255,255,.6);line-height:1.5;}
+.rd-cta{display:flex;gap:8px;margin-bottom:8px;}
+.btn-start{flex:1;background:var(--red);color:#fff;border:none;border-radius:14px;padding:14px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 5px 18px rgba(232,41,74,.4);transition:transform .15s;}
+.btn-start:active{transform:scale(.97);}
+.btn-ico{width:46px;height:46px;background:var(--d3);border:1px solid var(--b2);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;flex-shrink:0;}
+
+/* ════════════════════════════
+   NAVİGASYON
+════════════════════════════ */
+#navigasyon{background:var(--d1);}
+.nav-map{height:310px;position:relative;overflow:hidden;}
+.nav-map-bg{position:absolute;inset:0;background:#121a12;}
+.nav-top-bar{position:absolute;top:14px;left:14px;right:14px;display:flex;gap:10px;align-items:center;z-index:10;}
+.nav-back{width:36px;height:36px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;flex-shrink:0;}
+.nav-info-card{flex:1;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);border-radius:12px;padding:8px 13px;}
+.nic-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.nic-d{font-size:10px;color:var(--green);margin-top:1px;}
+.nav-loc{width:36px;height:36px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;}
+/* map pins */
+.mpin{position:absolute;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);}
+.mpin-b{border-radius:16px;padding:4px 9px;font-size:10px;font-weight:700;white-space:nowrap;}
+.mpin-t{width:2px;height:7px;}
+.mpin-d{width:7px;height:7px;border-radius:50%;}
+.mpin.done .mpin-b{background:#2a2a2a;color:var(--t2);}
+.mpin.done .mpin-t,.mpin.done .mpin-d{background:#333;}
+.mpin.cur .mpin-b{background:var(--red);box-shadow:0 3px 10px rgba(232,41,74,.5);}
+.mpin.cur .mpin-t,.mpin.cur .mpin-d{background:var(--red);}
+.mpin.cur .mpin-d{box-shadow:0 0 0 4px rgba(232,41,74,.25);}
+.mpin.nxt .mpin-b{background:var(--d4);color:var(--t2);border:1px solid var(--b2);}
+.mpin.nxt .mpin-t,.mpin.nxt .mpin-d{background:var(--t3);}
+.user-dot{position:absolute;transform:translate(-50%,-50%);}
+.ud-inner{width:14px;height:14px;background:var(--blue);border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 6px rgba(74,158,255,.2);animation:pdot 2s ease infinite;}
+@keyframes pdot{0%,100%{box-shadow:0 0 0 5px rgba(74,158,255,.22)}50%{box-shadow:0 0 0 10px rgba(74,158,255,.08)}}
+/* nav panel */
+.nav-panel{padding:14px 20px 0;}
+.nav-prog{display:flex;gap:4px;margin-bottom:13px;}
+.np-seg{flex:1;height:4px;border-radius:2px;background:var(--b2);}
+.np-seg.done{background:var(--green);}
+.np-seg.cur{background:var(--red);}
+.cur-stop{background:var(--d3);border:1px solid var(--b1);border-radius:18px;padding:15px;margin-bottom:11px;position:relative;overflow:hidden;}
+.cs-glow{position:absolute;top:-20px;right:-20px;width:80px;height:80px;background:radial-gradient(circle,rgba(232,41,74,.18),transparent 70%);pointer-events:none;}
+.cs-num{font-size:10px;color:var(--red);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.cs-name{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:4px;}
+.cs-desc{font-size:12px;color:var(--t2);line-height:1.4;margin-bottom:11px;}
+.cs-metas{display:flex;gap:8px;}
+.cs-meta{display:flex;align-items:center;gap:5px;background:var(--d4);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:500;}
+.cs-badges{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;}
+.nav-acts{display:flex;gap:8px;}
+.nav-skip{flex:1;background:var(--d3);border:1px solid var(--b2);border-radius:13px;padding:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--t2);cursor:pointer;text-align:center;}
+.nav-next{flex:2;background:var(--red);color:#fff;border:none;border-radius:13px;padding:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(232,41,74,.4);transition:transform .15s;}
+.nav-next:active{transform:scale(.97);}
+/* completion */
+.comp{position:absolute;inset:0;background:rgba(0,0,0,.93);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;z-index:60;opacity:0;pointer-events:none;transition:opacity .35s;}
+.comp.show{opacity:1;pointer-events:all;}
+.comp-ico{font-size:62px;margin-bottom:14px;animation:pop .5s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.comp-t{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;}
+.comp-d{font-size:13px;color:var(--t2);text-align:center;line-height:1.5;margin-bottom:20px;}
+.comp-xp{background:rgba(155,111,255,.15);border:1px solid rgba(155,111,255,.3);border-radius:12px;padding:12px 20px;display:flex;gap:10px;align-items:center;margin-bottom:18px;width:100%;}
+.comp-xp-v{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--purple);}
+.comp-xp-k{font-size:11px;color:rgba(155,111,255,.7);}
+.comp-badges{display:flex;gap:8px;margin-bottom:22px;}
+.comp-bdg{background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.3);border-radius:9px;padding:7px 12px;font-size:11px;color:var(--gold);font-weight:600;}
+
+/* ════════════════════════════
+   ROTALAR
+════════════════════════════ */
+#rotalar{background:var(--d2);}
+.map-c{margin:13px 20px 0;height:216px;background:var(--d3);border-radius:20px;border:1px solid var(--b1);overflow:hidden;position:relative;}
+.map-bg{position:absolute;inset:0;background:repeating-linear-gradient(0deg,var(--b1) 0,var(--b1) 1px,transparent 0,transparent 40px),repeating-linear-gradient(90deg,var(--b1) 0,var(--b1) 1px,transparent 0,transparent 40px);background-color:#141a14;}
+.map-ctrls{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px;}
+.mc{width:34px;height:34px;background:rgba(12,12,12,.9);border:1px solid var(--b2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;}
+.rlist{padding:0 20px;display:flex;flex-direction:column;gap:10px;}
+.rli{background:var(--d3);border:1px solid var(--b1);border-radius:16px;padding:13px;display:flex;gap:13px;cursor:pointer;transition:transform .15s;}
+.rli:active{transform:scale(.98);}
+.rli-img{width:66px;height:66px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;}
+.rli-body{flex:1;}
+.rli-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.rli-t{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;line-height:1.2;}
+.rli-tags{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;}
+.rtag{background:var(--d4);border:1px solid var(--b1);border-radius:5px;padding:2px 7px;font-size:8px;color:var(--t2);}
+.rli-bot{display:flex;justify-content:space-between;align-items:center;margin-top:7px;}
+
+/* ════════════════════════════
+   OLUŞTUR
+════════════════════════════ */
+#olustur{background:var(--d2);}
+.create-hero{margin:13px 20px 0;background:linear-gradient(135deg,#1a0810,#0d0408);border:1px solid var(--b1);border-radius:20px;padding:22px;text-align:center;position:relative;overflow:hidden;}
+.create-hero::before{content:'🗺️';position:absolute;right:-8px;bottom:-8px;font-size:78px;opacity:.07;}
+.ch-t{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:5px;}
+.ch-d{font-size:12px;color:var(--t2);line-height:1.5;}
+.ch-btn{margin-top:15px;background:var(--red);color:#fff;border:none;border-radius:12px;padding:11px 26px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 5px 18px rgba(232,41,74,.4);}
+.earn-grid{padding:13px 20px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.earn-card{background:var(--d3);border:1px solid var(--b1);border-radius:16px;padding:15px;}
+.earn-card.hl{border-color:rgba(232,41,74,.3);background:rgba(232,41,74,.05);}
+.earn-card.gl{border-color:rgba(245,197,24,.3);background:rgba(245,197,24,.05);}
+.earn-ico{font-size:24px;margin-bottom:7px;}
+.earn-t{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:3px;}
+.earn-d{font-size:10px;color:var(--t2);line-height:1.4;}
+.steps-box{margin:13px 20px 0;background:var(--d3);border:1px solid var(--b1);border-radius:20px;padding:17px;}
+.steps-lbl{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:13px;}
+.step-row{display:flex;align-items:flex-start;gap:11px;margin-bottom:13px;position:relative;}
+.step-row::after{content:'';position:absolute;left:12px;top:26px;width:1px;height:100%;background:var(--b1);}
+.step-row:last-child::after{display:none;}
+.step-n{width:25px;height:25px;border-radius:9px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;flex-shrink:0;z-index:1;}
+.step-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.step-d{font-size:11px;color:var(--t2);margin-top:2px;line-height:1.4;}
+.c-stats{margin:13px 20px 0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.cst{background:var(--d3);border:1px solid var(--b1);border-radius:14px;padding:13px 8px;text-align:center;}
+.cst-v{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;}
+.cst-k{font-size:9px;color:var(--t2);margin-top:2px;}
+
+/* ════════════════════════════
+   ROZETLER
+════════════════════════════ */
+#rozetler{background:var(--d2);}
+.badge-hero{margin:13px 20px 0;background:linear-gradient(135deg,#1a0a2d,#0d0516);border:1px solid rgba(155,111,255,.2);border-radius:20px;padding:20px;text-align:center;}
+.bh-lv{display:inline-block;background:rgba(155,111,255,.2);border:1px solid rgba(155,111,255,.4);border-radius:20px;padding:4px 13px;font-size:10px;font-weight:600;color:var(--purple);margin-bottom:9px;}
+.bh-name{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:3px;}
+.bh-sub{font-size:11px;color:var(--t2);}
+.xp-bar-wrap{margin:14px 0 0;background:var(--d4);border-radius:6px;height:8px;overflow:hidden;}
+.xp-bar{height:100%;background:linear-gradient(90deg,var(--purple),var(--red2));border-radius:6px;width:65%;position:relative;overflow:hidden;}
+.xp-bar::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);animation:shim 2s infinite;}
+@keyframes shim{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.xp-lbls{display:flex;justify-content:space-between;margin-top:5px;}
+.xp-lbls span{font-size:9px;color:var(--t2);}
+.badge-grid{margin:13px 20px 0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.bi{background:var(--d3);border:1px solid var(--b1);border-radius:16px;padding:13px 9px;text-align:center;cursor:pointer;transition:transform .15s;}
+.bi.earned{border-color:rgba(155,111,255,.3);background:rgba(155,111,255,.05);}
+.bi.gold{border-color:rgba(245,197,24,.3);background:rgba(245,197,24,.05);}
+.bi.locked{opacity:.4;}
+.bi:active{transform:scale(.94);}
+.bi-ico{font-size:28px;margin-bottom:5px;line-height:1;}
+.bi-name{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;line-height:1.2;}
+.bi-desc{font-size:8px;color:var(--t2);margin-top:2px;}
+.lb{margin:13px 20px 0;background:var(--d3);border:1px solid var(--b1);border-radius:20px;overflow:hidden;}
+.lb-h{padding:13px 15px;border-bottom:1px solid var(--b1);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.lbi{padding:11px 15px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--b1);cursor:pointer;}
+.lbi:last-child{border:none;}
+.lbi.me{background:rgba(232,41,74,.05);}
+.lbi-rank{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;min-width:20px;color:var(--t3);}
+.lbi-rank.top{color:var(--gold);}
+.lbi-ava{width:33px;height:33px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.lbi-name{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;}
+.lbi-sub{font-size:9px;color:var(--t2);}
+.lbi-xp{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--purple);}
+
+/* ════════════════════════════
+   KREDİ
+════════════════════════════ */
+#kredi{background:var(--d2);}
+.kr-hero{margin:13px 20px 0;background:linear-gradient(135deg,rgba(245,197,24,.1),rgba(245,197,24,.04));border:1px solid rgba(245,197,24,.2);border-radius:20px;padding:20px;text-align:center;position:relative;overflow:hidden;}
+.kr-glow{position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:180px;height:180px;background:radial-gradient(circle,rgba(245,197,24,.15),transparent 70%);pointer-events:none;}
+.kr-ico{font-size:34px;margin-bottom:7px;position:relative;z-index:1;}
+.kr-val{font-family:'Syne',sans-serif;font-size:40px;font-weight:800;color:var(--gold);position:relative;z-index:1;}
+.kr-key{font-size:12px;color:rgba(245,197,24,.6);margin-bottom:4px;position:relative;z-index:1;}
+.kr-sub{font-size:11px;color:var(--t2);line-height:1.4;position:relative;z-index:1;}
+.ab-toggle{margin:14px 20px 0;display:flex;background:var(--d3);border-radius:12px;padding:4px;}
+.abt{flex:1;padding:10px;text-align:center;border-radius:9px;cursor:pointer;transition:all .18s;}
+.abt.on{background:var(--red);box-shadow:0 3px 10px rgba(232,41,74,.3);}
+.abt-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.abt-d{font-size:9px;color:var(--t2);margin-top:2px;}
+.abt.on .abt-d{color:rgba(255,255,255,.6);}
+.plans{padding:13px 20px 0;display:flex;flex-direction:column;gap:10px;}
+.plan{background:var(--d3);border:2px solid var(--b1);border-radius:20px;padding:17px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden;}
+.plan.popular{border-color:var(--red);}
+.plan.sel{border-color:var(--gold);}
+.plan-bdg{position:absolute;top:13px;right:13px;background:var(--red);color:#fff;border-radius:6px;padding:3px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.plan-bdg.gold{background:var(--gold);color:#000;}
+.plan-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:3px;}
+.plan-price{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--red);margin-bottom:2px;}
+.plan-price.gold{color:var(--gold);}
+.plan-per{font-size:11px;color:var(--t2);}
+.plan-div{height:1px;background:var(--b1);margin:11px 0;}
+.plan-feat{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:12px;}
+.plan-feat .pf-ico{font-size:13px;width:17px;text-align:center;}
+.plan-feat .pf-t{color:rgba(255,255,255,.7);}
+.cr-packs{padding:13px 20px 0;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.crp{background:var(--d3);border:1.5px solid var(--b1);border-radius:16px;padding:15px;text-align:center;cursor:pointer;transition:transform .15s;}
+.crp:active{transform:scale(.95);}
+.crp.popular{border-color:rgba(245,197,24,.4);background:rgba(245,197,24,.05);}
+.crp-ico{font-size:22px;margin-bottom:5px;}
+.crp-val{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:var(--gold);}
+.crp-cr{font-size:10px;color:rgba(245,197,24,.6);margin-bottom:7px;}
+.crp-price{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
+.crp-bonus{font-size:9px;color:var(--green);font-weight:600;margin-top:3px;}
+
+/* ════════════════════════════
+   BİLDİRİMLER
+════════════════════════════ */
+#bildirimler{background:var(--d2);}
+.notif-list{padding:0 20px;display:flex;flex-direction:column;gap:8px;}
+.notif{background:var(--d3);border:1px solid var(--b1);border-radius:14px;padding:12px 13px;display:flex;gap:11px;cursor:pointer;transition:transform .15s;position:relative;}
+.notif:active{transform:scale(.98);}
+.notif.unread{border-color:rgba(232,41,74,.2);background:rgba(232,41,74,.04);}
+.notif-ava{width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.notif-body{flex:1;}
+.notif-t{font-size:13px;font-weight:500;line-height:1.4;}
+.notif-t strong{color:#fff;}
+.notif-time{font-size:10px;color:var(--t2);margin-top:3px;}
+.notif-dot{position:absolute;top:13px;right:13px;width:7px;height:7px;background:var(--red);border-radius:50%;}
+.notif-action{margin-top:7px;}
+.notif-btn{background:var(--d4);border:1px solid var(--b2);border-radius:8px;padding:5px 11px;font-size:11px;font-weight:600;color:var(--t1);cursor:pointer;display:inline-block;}
+
+/* ════════════════════════════
+   PROFİL
+════════════════════════════ */
+#profil{background:var(--d2);}
+.p-cov{height:128px;position:relative;overflow:hidden;}
+.p-cov-bg{position:absolute;inset:0;background:linear-gradient(135deg,#2d0e1a,#1a0d12,#0d0810);}
+.p-cov-pat{position:absolute;inset:0;background-image:repeating-linear-gradient(-45deg,rgba(232,41,74,.03) 0,rgba(232,41,74,.03) 1px,transparent 1px,transparent 24px);}
+.p-main{padding:0 20px;}
+.p-toprow{display:flex;justify-content:space-between;align-items:flex-end;margin-top:-34px;margin-bottom:11px;}
+.p-ava{width:68px;height:68px;background:linear-gradient(135deg,var(--red),#f80);border-radius:22px;border:4px solid var(--d2);display:flex;align-items:center;justify-content:center;font-size:28px;}
+.edit-btn{background:var(--d3);border:1px solid var(--b2);border-radius:10px;padding:8px 15px;font-size:12px;font-weight:600;color:var(--t1);cursor:pointer;}
+.p-name{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
+.p-handle{font-size:12px;color:var(--t2);margin-bottom:8px;}
+.p-bio{font-size:12px;color:rgba(255,255,255,.6);line-height:1.5;margin-bottom:13px;}
+.p-cr-card{background:rgba(245,197,24,.08);border:1px solid rgba(245,197,24,.22);border-radius:16px;padding:15px;display:flex;align-items:center;gap:11px;margin-bottom:13px;cursor:pointer;}
+.pcc-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--gold);}
+.pcc-key{font-size:11px;color:rgba(245,197,24,.6);}
+.pcc-btn{background:rgba(245,197,24,.14);border:1px solid rgba(245,197,24,.28);border-radius:10px;padding:7px 11px;font-size:11px;font-weight:600;color:var(--gold);cursor:pointer;}
+.p-stats{display:flex;background:var(--d3);border:1px solid var(--b1);border-radius:16px;overflow:hidden;margin-bottom:13px;}
+.pst{flex:1;padding:13px 7px;text-align:center;border-right:1px solid var(--b1);}
+.pst:last-child{border:none;}
+.pst-v{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;}
+.pst-k{font-size:9px;color:var(--t2);margin-top:2px;}
+.p-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px;}
+.pbdg{background:var(--d3);border:1px solid var(--b1);border-radius:8px;padding:5px 9px;font-size:10px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:4px;}
+.pbdg.gold{background:rgba(245,197,24,.1);border-color:rgba(245,197,24,.28);color:var(--gold);}
+.pbdg.purple{background:rgba(155,111,255,.1);border-color:rgba(155,111,255,.28);color:var(--purple);}
+.p-sec-t{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:9px;}
+.myrota{background:var(--d3);border:1px solid var(--b1);border-radius:16px;padding:11px 13px;display:flex;gap:11px;align-items:center;margin-bottom:9px;cursor:pointer;transition:transform .15s;}
+.myrota:active{transform:scale(.98);}
+.mr-e{font-size:26px;}
+.mr-info{flex:1;}
+.mr-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.mr-m{font-size:10px;color:var(--t2);margin-top:2px;}
+.mr-right{text-align:right;}
+.mr-r{font-size:10px;color:var(--gold);font-weight:600;}
+.mr-p{font-size:10px;font-weight:700;margin-top:2px;}
+.setlist{display:flex;flex-direction:column;gap:1px;margin-bottom:6px;}
+.setitem{background:var(--d3);padding:13px 15px;display:flex;align-items:center;gap:11px;cursor:pointer;}
+.setitem:first-child{border-radius:14px 14px 0 0;}
+.setitem:last-child{border-radius:0 0 14px 14px;}
+.si-ico{font-size:17px;width:22px;text-align:center;}
+.si-lbl{flex:1;font-size:13px;font-weight:500;}
+.si-arr{font-size:12px;color:var(--t3);}
+
+/* ════════════════════════════
+   CREATOR PROFİL
+════════════════════════════ */
+#creator-profil{background:var(--d2);}
+.cp-cov{height:116px;position:relative;overflow:hidden;}
+.cp-cov-bg{position:absolute;inset:0;}
+.cp-cov-pat{position:absolute;inset:0;background-image:repeating-linear-gradient(-45deg,rgba(60,205,100,.03) 0,rgba(60,205,100,.03) 1px,transparent 1px,transparent 24px);}
+.cp-back{position:absolute;top:14px;left:14px;width:36px;height:36px;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;z-index:10;}
+.cp-main{padding:0 20px;}
+.cp-toprow{display:flex;justify-content:space-between;align-items:flex-end;margin-top:-33px;margin-bottom:11px;}
+.cp-ava{width:66px;height:66px;border-radius:22px;border:4px solid var(--d2);display:flex;align-items:center;justify-content:center;font-size:26px;}
+.fol-btn{background:var(--red);color:#fff;border:none;border-radius:12px;padding:9px 19px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(232,41,74,.4);transition:all .18s;}
+.fol-btn.fing{background:var(--d3);border:1px solid var(--b2);color:var(--t2);box-shadow:none;}
+.cp-name{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
+.cp-handle{font-size:12px;color:var(--t2);margin-bottom:7px;}
+.cp-bio{font-size:12px;color:rgba(255,255,255,.6);line-height:1.5;margin-bottom:13px;}
+.cp-stats{display:flex;background:var(--d3);border:1px solid var(--b1);border-radius:16px;overflow:hidden;margin-bottom:13px;}
+.cpst{flex:1;padding:13px 7px;text-align:center;border-right:1px solid var(--b1);}
+.cpst:last-child{border:none;}
+.cpst-v{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;}
+.cpst-k{font-size:9px;color:var(--t2);margin-top:2px;}
+.cp-bdgs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:15px;}
+.cpb{background:var(--d3);border:1px solid var(--b1);border-radius:8px;padding:4px 9px;font-size:10px;color:rgba(255,255,255,.6);}
+.cpb.gold{background:rgba(245,197,24,.1);border-color:rgba(245,197,24,.28);color:var(--gold);}
+.cpb.purple{background:rgba(155,111,255,.1);border-color:rgba(155,111,255,.28);color:var(--purple);}
+.cp-rcard{background:var(--d3);border:1px solid var(--b1);border-radius:16px;padding:13px;display:flex;gap:11px;cursor:pointer;transition:transform .15s;margin-bottom:9px;}
+.cp-rcard:active{transform:scale(.98);}
+.cpr-e{font-size:28px;}
+.cpr-t{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
+.cpr-m{font-size:10px;color:var(--t2);margin-top:2px;}
+.cpr-right{text-align:right;margin-left:auto;}
+.cpr-r{font-size:10px;color:var(--gold);font-weight:600;}
+.cpr-p{font-size:10px;font-weight:700;margin-top:2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="scene-lbl">GettinOut · Demo</div>
+<div class="phone">
+  <div class="di"><div class="di-cam"></div><div class="di-dot"></div></div>
+  <div class="sb">
+    <span class="sb-time">9:41</span>
+    <div class="sb-icons"><span>●●●</span><span>📶</span><span>🔋</span></div>
+  </div>
+
+  <div class="screens">
+
+  <!-- ══ SPLASH ══ -->
+  <div class="scr active" id="splash">
+    <div class="sp-inner">
+      <div class="sp-glow"></div>
+      <div class="sp-icon">🗺️</div>
+      <div class="sp-logo">Gettin<em>Out</em></div>
+      <div class="sp-tag">Harekete Geç!</div>
+      <div class="sp-feats">
+        <div class="sp-feat"><span class="sp-feat-ico">📍</span><div><div class="sp-feat-t">Özgün Şehir Rotaları</div><div class="sp-feat-d">Yerel gezginlerin gizli noktaları</div></div></div>
+        <div class="sp-feat"><span class="sp-feat-ico">💰</span><div><div class="sp-feat-t">Creator Olarak Kazan</div><div class="sp-feat-d">Rotanı paylaş, gelir elde et</div></div></div>
+        <div class="sp-feat"><span class="sp-feat-ico">🏆</span><div><div class="sp-feat-t">Rozet & Topluluk</div><div class="sp-feat-d">Rota tamamla, unvanlar kazan</div></div></div>
+      </div>
+      <div class="sp-cr">
+        <span class="sp-cr-ico">🎁</span>
+        <div class="sp-cr-t">Üye ol, <strong>50 Kredi</strong> kazan!<br>Premium rotalara hemen eriş.</div>
+      </div>
+      <div class="sp-btns">
+        <button class="btn-red" onclick="goTo('ob1')">Ücretsiz Başla</button>
+        <button class="btn-ghost" onclick="goTo('home')">Zaten üyeyim, Giriş Yap</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ONBOARDING 1 ══ -->
+  <div class="scr" id="ob1">
+    <div class="ob-inner">
+      <div class="ob-steps"><div class="ob-step done"></div><div class="ob-step"></div><div class="ob-step"></div></div>
+      <div class="ob-icon" style="background:linear-gradient(135deg,var(--red),#b01830);">👋</div>
+      <div class="ob-title">Merhaba!<br>Sen kimsin?</div>
+      <div class="ob-sub">Sana en uygun rotaları önerebilmemiz için birkaç şeyi öğrenmek istiyoruz.</div>
+      <div class="ob-grid">
+        <div class="ob-item" onclick="selOb(this,'ob1')"><div class="ob-emoji">🏃</div><div class="ob-label">Gezgin</div></div>
+        <div class="ob-item" onclick="selOb(this,'ob1')"><div class="ob-emoji">📸</div><div class="ob-label">Fotoğrafçı</div></div>
+        <div class="ob-item" onclick="selOb(this,'ob1')"><div class="ob-emoji">🍽️</div><div class="ob-label">Gurme</div></div>
+        <div class="ob-item" onclick="selOb(this,'ob1')"><div class="ob-emoji">🏛️</div><div class="ob-label">Tarih Sever</div></div>
+        <div class="ob-item" onclick="selOb(this,'ob1')"><div class="ob-emoji">🌿</div><div class="ob-label">Doğa Sever</div></div>
+        <div class="ob-item" onclick="selOb(this,'ob1')"><div class="ob-emoji">🎨</div><div class="ob-label">Sanat Sever</div></div>
+      </div>
+      <div class="ob-spacer"></div>
+      <button class="btn-red" onclick="goTo('ob2')">Devam →</button>
+      <div class="ob-skip" onclick="goTo('ob2')">Atla</div>
+    </div>
+  </div>
+
+  <!-- ══ ONBOARDING 2 ══ -->
+  <div class="scr" id="ob2">
+    <div class="ob-inner">
+      <div class="ob-steps"><div class="ob-step done"></div><div class="ob-step done"></div><div class="ob-step"></div></div>
+      <div class="ob-icon" style="background:linear-gradient(135deg,var(--purple),#5010cc);">⏱️</div>
+      <div class="ob-title">Rotalar ne kadar sürsün?</div>
+      <div class="ob-sub">Günlük hayatına en uygun rota süresini seç.</div>
+      <div class="ob-list">
+        <div class="ob-list-item" onclick="selOb(this,'ob2')"><span class="ob-list-ico">⚡</span><div><div class="ob-list-t">1-2 Saat</div><div class="ob-list-d">Hızlı şehir kaçamakları</div></div></div>
+        <div class="ob-list-item" onclick="selOb(this,'ob2')"><span class="ob-list-ico">🌅</span><div><div class="ob-list-t">3-4 Saat</div><div class="ob-list-d">Yarım günlük keşif</div></div></div>
+        <div class="ob-list-item" onclick="selOb(this,'ob2')"><span class="ob-list-ico">🗓️</span><div><div class="ob-list-t">Tam Gün</div><div class="ob-list-d">Derin şehir deneyimi</div></div></div>
+        <div class="ob-list-item" onclick="selOb(this,'ob2')"><span class="ob-list-ico">🎯</span><div><div class="ob-list-t">Fark Etmez</div><div class="ob-list-d">Her şeyi görmek istiyorum</div></div></div>
+      </div>
+      <div class="ob-spacer"></div>
+      <button class="btn-red" onclick="goTo('ob3')">Devam →</button>
+      <div class="ob-skip" onclick="goTo('ob3')">Atla</div>
+    </div>
+  </div>
+
+  <!-- ══ ONBOARDING 3 ══ -->
+  <div class="scr" id="ob3">
+    <div class="ob-inner">
+      <div class="ob-steps"><div class="ob-step done"></div><div class="ob-step done"></div><div class="ob-step done"></div></div>
+      <div class="ob-icon" style="background:linear-gradient(135deg,var(--gold),#cc8800);">📍</div>
+      <div class="ob-title">Hangi şehirleri keşfetmek istersin?</div>
+      <div class="ob-sub">Birden fazla seçebilirsin.</div>
+      <div class="ob-grid">
+        <div class="ob-item" onclick="selOb(this,'ob3')"><div class="ob-emoji">🏙️</div><div class="ob-label">İstanbul</div></div>
+        <div class="ob-item" onclick="selOb(this,'ob3')"><div class="ob-emoji">🌊</div><div class="ob-label">İzmir</div></div>
+        <div class="ob-item" onclick="selOb(this,'ob3')"><div class="ob-emoji">🏛️</div><div class="ob-label">Ankara</div></div>
+        <div class="ob-item" onclick="selOb(this,'ob3')"><div class="ob-emoji">🎡</div><div class="ob-label">Eskişehir</div></div>
+        <div class="ob-item" onclick="selOb(this,'ob3')"><div class="ob-emoji">🏖️</div><div class="ob-label">Antalya</div></div>
+        <div class="ob-item" onclick="selOb(this,'ob3')"><div class="ob-emoji">🗺️</div><div class="ob-label">Her Yer</div></div>
+      </div>
+      <div class="ob-spacer"></div>
+      <button class="btn-red" onclick="goTo('home')">🚀 Haydi Başlayalım!</button>
+    </div>
+  </div>
+
+  <!-- ══ HOME ══ -->
+  <div class="scr" id="home">
+    <div class="home-top">
+      <div><div class="h-greeting-sm">İyi günler 👋</div><div class="h-name">Serhat</div></div>
+      <div class="h-right">
+        <div class="notif-btn" onclick="goTo('bildirimler')">🔔<div class="notif-dot"></div></div>
+        <div class="cr-pill" onclick="goTo('kredi')">◆ 48</div>
+      </div>
+    </div>
+    <div class="h-search" onclick="goTo('arama')">
+      <span style="font-size:15px;">🔍</span>
+      <span class="h-search-txt">Şehir veya rota ara...</span>
+      <div class="h-search-filter">⚙️</div>
+    </div>
+    <div class="cats">
+      <div class="cat on">Tümü</div>
+      <div class="cat">🍽️ Gastronomi</div>
+      <div class="cat">🏛️ Kültür</div>
+      <div class="cat">🌿 Doğa</div>
+      <div class="cat">🌙 Gece</div>
+      <div class="cat">🎨 Sanat</div>
+    </div>
+    <div class="sec-h" style="padding-top:14px;"><span class="sec-t">⚡ Öne Çıkan</span></div>
+    <div class="hero-card" onclick="openRota('kadikoylezzet')">
+      <div class="hc-bg" style="background:linear-gradient(135deg,#2a0a12,#1a0810,#0d0408);"></div>
+      <div class="hc-noise"></div>
+      <div class="hc-emoji">🥘</div>
+      <div class="hc-pills"><span class="pill gastro">Gastronomi</span><span class="pill free">Ücretsiz</span></div>
+      <div class="hc-body">
+        <div class="hc-title">Kadıköy Lezzet Rotası</div>
+        <div class="hc-meta"><span>⏱ 3 saat</span><div class="mdot"></div><span>8 durak</span><div class="mdot"></div><span>⭐ 4.8</span><div class="mdot"></div><span>347 gezildi</span></div>
+        <div class="hc-creator"><div class="mini-ava">B</div><span style="font-size:10px;color:rgba(255,255,255,.5);">Barış Demir tarafından</span></div>
+      </div>
+    </div>
+    <div class="sec-h"><span class="sec-t">🔥 Popüler</span><span class="sec-a" onclick="goTo('rotalar')">Tümünü Gör →</span></div>
+    <div class="rrow">
+      <div class="rcard" onclick="openRota('balat')"><div class="ri g2">🏛️<div class="ri-tag">İstanbul</div></div><div class="rb"><div class="rb-t">Balat Sokakları</div><div class="rb-m">2 sa • 6 durak</div><div class="rb-f"><span class="rb-r">⭐ 4.9</span><span class="pfree">✓ Ücretsiz</span></div></div></div>
+      <div class="rcard" onclick="openRota('belgrad')"><div class="ri g3">🌿<div class="ri-tag">İstanbul</div></div><div class="rb"><div class="rb-t">Belgrad Ormanı</div><div class="rb-m">4 sa • 5 durak</div><div class="rb-f"><span class="rb-r">⭐ 4.7</span><span class="pfree">✓ Ücretsiz</span></div></div></div>
+      <div class="rcard" onclick="openRota('beyoglu')"><div class="ri g4">🌙<div class="ri-tag">İstanbul</div></div><div class="rb"><div class="rb-t">Beyoğlu Gece</div><div class="rb-m">3 sa • 7 durak</div><div class="rb-f"><span class="rb-r">⭐ 4.6</span><span class="pcred">◆ 10</span></div></div></div>
+      <div class="rcard" onclick="openRota('karakoy')"><div class="ri g5">🎨<div class="ri-tag">İstanbul</div></div><div class="rb"><div class="rb-t">Karaköy Sanat</div><div class="rb-m">2.5 sa • 9 durak</div><div class="rb-f"><span class="rb-r">⭐ 4.8</span><span class="pcred">◆ 15</span></div></div></div>
+    </div>
+    <div class="sec-h"><span class="sec-t">📈 Bu Hafta Trend</span></div>
+    <div class="trlist">
+      <div class="tri" onclick="openRota('izmir')"><div class="tri-n">1</div><div class="tri-e">🏖️</div><div class="tri-info"><div class="tri-t">İzmir Kordon Turu</div><div class="tri-m">2 sa • İzmir • ⭐ 4.9</div></div><div class="tri-b">+124</div></div>
+      <div class="tri" onclick="openRota('ankara')"><div class="tri-n">2</div><div class="tri-e">🏰</div><div class="tri-info"><div class="tri-t">Ankara Kalesi Rotası</div><div class="tri-m">3 sa • Ankara • ⭐ 4.7</div></div><div class="tri-b">+98</div></div>
+      <div class="tri" onclick="openRota('egekahvalti')"><div class="tri-n">3</div><div class="tri-e">🫒</div><div class="tri-info"><div class="tri-t">Ege Kahvaltı Rotası</div><div class="tri-m">2.5 sa • İzmir • ⭐ 5.0</div></div><div class="tri-b">+87</div></div>
+    </div>
+    <div class="pad-b"></div>
+  </div>
+
+  <!-- ══ ARAMA ══ -->
+  <div class="scr" id="arama">
+    <div class="ara-top">
+      <div class="ara-box"><span style="font-size:15px;">🔍</span><input type="text" id="ara-inp" placeholder="Şehir, tema, rota..." oninput="araFilter(this.value)"></div>
+      <div class="ara-cancel" onclick="goBack()">İptal</div>
+    </div>
+    <div class="fs">
+      <div class="fs-t">Kategori</div>
+      <div class="chips">
+        <div class="chip on" onclick="toggleChip(this)">Tümü</div>
+        <div class="chip" onclick="toggleChip(this)">🍽️ Gastronomi</div>
+        <div class="chip" onclick="toggleChip(this)">🏛️ Kültür</div>
+        <div class="chip" onclick="toggleChip(this)">🌿 Doğa</div>
+        <div class="chip" onclick="toggleChip(this)">🌙 Gece</div>
+        <div class="chip" onclick="toggleChip(this)">🎨 Sanat</div>
+      </div>
+      <div class="fs-t">Süre</div>
+      <div class="rbrow">
+        <div class="rb-btn on" onclick="selRb(this)"><div class="rb-btn-v">Tümü</div></div>
+        <div class="rb-btn" onclick="selRb(this)"><div class="rb-btn-v">1-2 sa</div></div>
+        <div class="rb-btn" onclick="selRb(this)"><div class="rb-btn-v">2-4 sa</div></div>
+        <div class="rb-btn" onclick="selRb(this)"><div class="rb-btn-v">4+ sa</div></div>
+      </div>
+      <div class="fs-t">Filtreler</div>
+      <div class="tgls">
+        <div class="tgl-row"><div><div class="tgl-lbl">Ücretsiz Rotalar</div><div class="tgl-sub">Kredi gerektirmeyen rotalar</div></div><div class="tgl" onclick="this.classList.toggle('on')"></div></div>
+        <div class="tgl-row"><div><div class="tgl-lbl">Yakınımdakiler</div><div class="tgl-sub">Konumuma göre filtrele</div></div><div class="tgl on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="tgl-row"><div><div class="tgl-lbl">Yüksek Puanlı</div><div class="tgl-sub">4.5 yıldız ve üzeri</div></div><div class="tgl" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+    </div>
+    <div class="sec-h"><span class="sec-t" id="ara-count">Tüm Rotalar (10)</span></div>
+    <div class="ara-results" id="ara-results"></div>
+    <div class="pad-b"></div>
+  </div>
+
+  <!-- ══ ROTA DETAY ══ -->
+  <div class="scr" id="rota-detay">
+    <div class="rd-hero">
+      <div class="rd-hbg" id="rd-hbg"></div>
+      <div class="rd-emoji" id="rd-emoji">🥘</div>
+      <div class="rd-fade"></div>
+      <div class="rd-back" onclick="goBack()">←</div>
+      <div class="rd-save" id="rd-save" onclick="toggleSave()">♡</div>
+    </div>
+    <div class="rd-body">
+      <div class="rd-pills" id="rd-pills"></div>
+      <div class="rd-title" id="rd-title"></div>
+      <div class="rd-creator" onclick="openCreator()">
+        <div class="rd-cr-ava" id="rd-cr-ava">B</div>
+        <div style="flex:1;"><div class="rd-cr-name" id="rd-cr-name">Barış Demir</div><div class="rd-cr-sub" id="rd-cr-sub">4.9 ⭐ • 12 rota</div></div>
+        <span style="font-size:16px;color:var(--t3);">›</span>
+      </div>
+      <div class="rd-stats" id="rd-stats"></div>
+      <div class="rd-desc" id="rd-desc"></div>
+      <div class="stops-lbl">📍 Duraklar</div>
+      <div id="rd-stops"></div>
+      <div class="reviews-lbl">💬 Yorumlar</div>
+      <div id="rd-reviews"></div>
+      <div class="rd-cta">
+        <button class="btn-start" id="rd-cta-btn">Rotayı Başlat 🗺️</button>
+        <div class="btn-ico" onclick="showToast('📤 Paylaşıldı!')">⤴</div>
+        <div class="btn-ico" onclick="showToast('📋 Listeye eklendi!')">＋</div>
+      </div>
+    </div>
+    <div class="pad-b"></div>
+  </div>
+
+  <!-- ══ NAVİGASYON ══ -->
+  <div class="scr" id="navigasyon">
+    <div class="nav-map">
+      <div class="nav-map-bg"></div>
+      <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 375 310">
+        <path d="M40 270 Q90 210 150 170 Q210 130 240 90 Q265 55 320 38" stroke="rgba(255,255,255,0.04)" stroke-width="16" fill="none" stroke-linecap="round"/>
+        <path d="M40 270 Q90 210 150 170" stroke="var(--green)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M150 170 Q210 130 240 90 Q265 55 320 38" stroke="var(--red)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="6 4"/>
+      </svg>
+      <div class="nav-top-bar">
+        <div class="nav-back" onclick="goBack()">←</div>
+        <div class="nav-info-card"><div class="nic-t" id="nav-rota-name">Kadıköy Lezzet Rotası</div><div class="nic-d" id="nav-status">Devam ediyor • Durak 3/8</div></div>
+        <div class="nav-loc">📍</div>
+      </div>
+      <div class="mpin done" style="left:11%;top:84%;"><div class="mpin-b">1 ✓</div><div class="mpin-t"></div><div class="mpin-d"></div></div>
+      <div class="mpin done" style="left:40%;top:54%;"><div class="mpin-b">2 ✓</div><div class="mpin-t"></div><div class="mpin-d"></div></div>
+      <div class="mpin cur" style="left:64%;top:27%;"><div class="mpin-b" id="nav-cur-pin">3 Moda Sahili</div><div class="mpin-t"></div><div class="mpin-d"></div></div>
+      <div class="mpin nxt" style="left:85%;top:11%;"><div class="mpin-b">4</div><div class="mpin-t"></div><div class="mpin-d"></div></div>
+      <div class="user-dot" style="left:57%;top:39%;"><div class="ud-inner"></div></div>
+    </div>
+    <div class="nav-panel">
+      <div class="nav-prog" id="nav-prog"></div>
+      <div class="cur-stop">
+        <div class="cs-glow"></div>
+        <div class="cs-num" id="cs-num">DURAK 3/8</div>
+        <div class="cs-name" id="cs-name">Moda Sahili</div>
+        <div class="cs-desc" id="cs-desc">Kadıköy sahilinde yürüyüş ve Boğaz manzarası.</div>
+        <div class="cs-metas">
+          <div class="cs-meta">🚶 <span id="cs-dist">320m</span></div>
+          <div class="cs-meta">⏱ <span id="cs-eta">4 dk</span></div>
+        </div>
+        <div class="cs-badges" id="cs-badges"></div>
+      </div>
+      <div class="nav-acts">
+        <div class="nav-skip" onclick="navNext()">Atla →</div>
+        <button class="nav-next" onclick="navNext()">Durağa Vardım ✓</button>
+      </div>
+    </div>
+    <div class="comp" id="comp">
+      <div class="comp-ico">🎉</div>
+      <div class="comp-t">Rota Tamamlandı!</div>
+      <div class="comp-d">Harika bir keşif yaptın!</div>
+      <div class="comp-xp"><div><div class="comp-xp-v">+350 XP</div><div class="comp-xp-k">Kazanılan deneyim</div></div></div>
+      <div class="comp-badges"><div class="comp-bdg">🎯 Kaşif</div><div class="comp-bdg">🍽️ Gurme</div></div>
+      <button class="btn-red" onclick="goTo('home');document.getElementById('comp').classList.remove('show')">Ana Sayfaya Dön</button>
+      <button class="btn-ghost" style="margin-top:10px;" onclick="showToast('⭐ Yorum eklendi!');goTo('home');document.getElementById('comp').classList.remove('show')">Yorum Yap & Puanla ⭐</button>
+    </div>
+  </div>
+
+  <!-- ══ ROTALAR ══ -->
+  <div class="scr" id="rotalar">
+    <div class="pbar"><div class="pbar-t">Rotalar</div><span style="font-size:20px;cursor:pointer;" onclick="goTo('arama')">🔍</span></div>
+    <div class="map-c">
+      <div class="map-bg"></div>
+      <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 375 216">
+        <path d="M0 108 Q90 80 187 108 Q280 136 375 108" stroke="rgba(255,255,255,0.05)" stroke-width="12" fill="none"/>
+        <path d="M187 0 Q200 58 187 108 Q175 158 187 216" stroke="rgba(255,255,255,0.04)" stroke-width="10" fill="none"/>
+      </svg>
+      <div class="mpin" style="left:30%;top:42%;transform:translate(-50%,-100%);" onclick="openRota('kadikoylezzet')"><div class="mpin-b" style="background:var(--red);box-shadow:0 3px 10px rgba(232,41,74,.5);">🥘 Kadıköy</div><div class="mpin-t" style="background:var(--red);"></div><div class="mpin-d" style="background:var(--red);"></div></div>
+      <div class="mpin" style="left:57%;top:22%;transform:translate(-50%,-100%);" onclick="openRota('balat')"><div class="mpin-b" style="background:var(--gold);color:#000;">🏛️ Balat</div><div class="mpin-t" style="background:var(--gold);"></div><div class="mpin-d" style="background:var(--gold);"></div></div>
+      <div class="mpin" style="left:74%;top:58%;transform:translate(-50%,-100%);" onclick="openRota('belgrad')"><div class="mpin-b" style="background:var(--green);color:#000;">🌿 Belgrad</div><div class="mpin-t" style="background:var(--green);"></div><div class="mpin-d" style="background:var(--green);"></div></div>
+      <div class="mpin" style="left:44%;top:68%;transform:translate(-50%,-100%);" onclick="openRota('beyoglu')"><div class="mpin-b" style="background:var(--purple);">🌙 Beyoğlu</div><div class="mpin-t" style="background:var(--purple);"></div><div class="mpin-d" style="background:var(--purple);"></div></div>
+      <div class="user-dot" style="position:absolute;top:50%;left:48%;transform:translate(-50%,-50%);"><div class="ud-inner"></div></div>
+      <div class="map-ctrls"><div class="mc">+</div><div class="mc">−</div><div class="mc">📍</div></div>
+    </div>
+    <div class="sec-h"><span class="sec-t">Yakınındaki Rotalar</span><span class="sec-a" onclick="goTo('arama')">Filtrele ⚙️</span></div>
+    <div class="rlist">
+      <div class="rli" onclick="openRota('kadikoylezzet')"><div class="rli-img g1">🥘</div><div class="rli-body"><div class="rli-top"><div class="rli-t">Kadıköy Lezzet Rotası</div><span class="pfree">Ücretsiz</span></div><div style="font-size:10px;color:var(--t2);margin-top:3px;">⏱ 3 sa • 2.3 km • 8 durak</div><div class="rli-tags"><span class="rtag">Gastronomi</span><span class="rtag">Aile</span></div><div class="rli-bot"><span style="font-size:10px;color:var(--gold);font-weight:600;">⭐ 4.8 (127)</span><span style="font-size:10px;color:var(--t2);">♡ 342</span></div></div></div>
+      <div class="rli" onclick="openRota('balat')"><div class="rli-img g2">🏛️</div><div class="rli-body"><div class="rli-top"><div class="rli-t">Balat'ın Gizli Sokakları</div><span class="pfree">Ücretsiz</span></div><div style="font-size:10px;color:var(--t2);margin-top:3px;">⏱ 2 sa • 1.8 km • 6 durak</div><div class="rli-tags"><span class="rtag">Kültür</span><span class="rtag">Tarih</span></div><div class="rli-bot"><span style="font-size:10px;color:var(--gold);font-weight:600;">⭐ 4.9 (203)</span><span style="font-size:10px;color:var(--t2);">♡ 589</span></div></div></div>
+      <div class="rli" onclick="openRota('beyoglu')"><div class="rli-img g4">🌙</div><div class="rli-body"><div class="rli-top"><div class="rli-t">Beyoğlu Gece Rotası</div><span class="pcred">◆ 10 Kredi</span></div><div style="font-size:10px;color:var(--t2);margin-top:3px;">⏱ 3 sa • 3.1 km • 7 durak</div><div class="rli-tags"><span class="rtag">Gece</span><span class="rtag">Müzik</span></div><div class="rli-bot"><span style="font-size:10px;color:var(--gold);font-weight:600;">⭐ 4.6 (89)</span><span style="font-size:10px;color:var(--t2);">♡ 211</span></div></div></div>
+    </div>
+    <div class="pad-b"></div>
+  </div>
+
+  <!-- ══ OLUŞTUR ══ -->
+  <div class="scr" id="olustur">
+    <div class="pbar"><div class="pbar-t">Rota Oluştur</div></div>
+    <div class="create-hero"><div class="ch-t">Creator Ol 🧭</div><div class="ch-d">Şehrini en iyi sen biliyorsun. Rotanı oluştur, topluluğunla paylaş, gelir elde et.</div><button class="ch-btn" onclick="showToast('✏️ Rota editörü açılıyor...')">+ Yeni Rota Oluştur</button></div>
+    <div class="earn-grid">
+      <div class="earn-card hl"><div class="earn-ico">💰</div><div class="earn-t">%70 Gelir Payı</div><div class="earn-d">Her satıştan direkt kazan.</div></div>
+      <div class="earn-card gl"><div class="earn-ico">◆</div><div class="earn-t">Bonus Kredi</div><div class="earn-d">Her gezilen rotana extra kredi.</div></div>
+      <div class="earn-card"><div class="earn-ico">📣</div><div class="earn-t">Marka Ol</div><div class="earn-d">Takipçi topla, Top Creator ol.</div></div>
+      <div class="earn-card"><div class="earn-ico">🤝</div><div class="earn-t">İşletme Ortak</div><div class="earn-d">Durak işletmelerinden de kazan.</div></div>
+    </div>
+    <div class="steps-box">
+      <div class="steps-lbl">Nasıl Çalışır?</div>
+      <div class="step-row"><div class="step-n">1</div><div><div class="step-t">Rotanı Oluştur</div><div class="step-d">Duraklarını ekle, açıklama ve fotoğraf yükle.</div></div></div>
+      <div class="step-row"><div class="step-n">2</div><div><div class="step-t">Onaya Gönder</div><div class="step-d">24 saat içinde kalite kontrolü yapılır.</div></div></div>
+      <div class="step-row"><div class="step-n">3</div><div><div class="step-t">Yayınla & Kazan</div><div class="step-d">Her gezilmede gelir akışın başlar.</div></div></div>
+    </div>
+    <div class="c-stats">
+      <div class="cst"><div class="cst-v" style="color:var(--red);">347</div><div class="cst-k">Aktif Creator</div></div>
+      <div class="cst"><div class="cst-v" style="color:var(--gold);">12.4K</div><div class="cst-k">Rota Gezildi</div></div>
+      <div class="cst"><div class="cst-v" style="color:var(--green);">₺89K</div><div class="cst-k">Ödenen Gelir</div></div>
+    </div>
+    <div class="pad-b"></div>
+  </div>
+
+  <!-- ══ ROZETLER ══ -->
+  <div class="scr" id="rozetler">
+    <div class="pbar"><div class="pbar-t">Rozetler</div><span style="font-size:20px;">🏆</span></div>
+    <div class="badge-hero">
+      <div class="bh-lv">🌟 Gezgin Seviye 3</div>
+      <div class="bh-name">Serhat Rençper</div>
+      <div class="bh-sub">Sonraki seviyeye 1.350 XP kaldı</div>
+      <div class="xp-bar-wrap"><div class="xp-bar"></div></div>
+      <div class="xp-lbls"><span>3.650 XP</span><span>Seviye 4 → 5.000 XP</span></div>
+    </div>
+    <div class="sec-h"><span class="sec-t">Rozetlerim</span></div>
+    <div class="badge-grid">
+      <div class="bi gold" onclick="showToast('🎯 İlk Adım — Kazanıldı!')"><div class="bi-ico">🎯</div><div class="bi-name">İlk Adım</div><div class="bi-desc">İlk rota gezildi</div></div>
+      <div class="bi earned" onclick="showToast('🗺️ Kaşif — Kazanıldı!')"><div class="bi-ico">🗺️</div><div class="bi-name">Kaşif</div><div class="bi-desc">5 rota tamamlandı</div></div>
+      <div class="bi earned" onclick="showToast('⭐ Eleştirmen — Kazanıldı!')"><div class="bi-ico">⭐</div><div class="bi-name">Eleştirmen</div><div class="bi-desc">10 yorum yapıldı</div></div>
+      <div class="bi locked" onclick="showToast('🔒 10 gastronomi rotası gez!')"><div class="bi-ico" style="opacity:.3;font-size:24px;">🍽️</div><div class="bi-name">Gurme</div><div class="bi-desc">10 gastronomi</div></div>
+      <div class="bi locked" onclick="showToast('🔒 İlk rotanı oluştur!')"><div class="bi-ico" style="opacity:.3;font-size:24px;">✏️</div><div class="bi-name">Creator</div><div class="bi-desc">İlk rota oluştur</div></div>
+      <div class="bi locked" onclick="showToast('🔒 50 rota gez!')"><div class="bi-ico" style="opacity:.3;font-size:24px;">👑</div><div class="bi-name">Efsane</div><div class="bi-desc">50 rota gezildi</div></div>
+    </div>
+    <div class="lb">
+      <div class="lb-h">🔥 Haftalık Sıralama</div>
+      <div class="lbi" onclick="openCreator()"><div class="lbi-rank top">1</div><div class="lbi-ava" style="background:linear-gradient(135deg,var(--green),#0a8a30);">🧭</div><div style="flex:1;"><div class="lbi-name">Barış Demir</div><div class="lbi-sub">12 rota bu hafta</div></div><div class="lbi-xp">4.820</div></div>
+      <div class="lbi"><div class="lbi-rank top">2</div><div class="lbi-ava" style="background:linear-gradient(135deg,var(--blue),#0055cc);">E</div><div style="flex:1;"><div class="lbi-name">Elif Yılmaz</div><div class="lbi-sub">8 rota bu hafta</div></div><div class="lbi-xp">3.240</div></div>
+      <div class="lbi me"><div class="lbi-rank" style="color:var(--red);">7</div><div class="lbi-ava" style="background:linear-gradient(135deg,var(--red),#f80);">S</div><div style="flex:1;"><div class="lbi-name">Serhat (Sen)</div><div class="lbi-sub">3 rota bu hafta</div></div><div class="lbi-xp" style="color:var(--red);">1.240</div></div>
+    </div>
+    <div class="pad-b"></div>
+  </div>
+
+  <!-- ══ KREDİ ══ -->
+  <div class="scr" id="kredi">
+    <div class="pbar">
+      <div style="display:flex;align-items:center;gap:10px;"><div class="back-btn" onclick="goBack()">←</div><div class="pbar-t">Kredi & Abonelik</div></div>
+    </div>
+    <div class="kr-hero"><div class="kr-glow"></div><div class="kr-ico">◆</div><div class="kr-val">48</div><div class="kr-key">Mevcut Krediniz</div><div class="kr-sub">Kredilerinizle premium rotalara erişin.</div></div>
+    <div class="ab-toggle">
+      <div class="abt on" onclick="setAb('aylik')"><div class="abt-t">Aylık</div><div class="abt-d">Esnek</div></div>
+      <div class="abt" onclick="setAb('yillik')"><div class="abt-t">Yıllık</div><div class="abt-d" style="color:var(--green);">%40 İndirim 🎉</div></div>
+    </div>
+    <div class="plans">
+      <div class="plan" onclick="selPlan(this)">
+        <div class="plan-name">Ücretsiz</div>
+        <div class="plan-price" style="color:var(--t2);">₺0</div><div class="plan-per">/ süresiz</div>
+        <div class="plan-div"></div>
+        <div class="plan-feat"><span class="pf-ico">✓</span><span class="pf-t">50 başlangıç kredisi</span></div>
+        <div class="plan-feat"><span class="pf-ico">✓</span><span class="pf-t">Ücretsiz rotalara tam erişim</span></div>
+        <div class="plan-feat"><span class="pf-ico" style="color:var(--t3);">✗</span><span class="pf-t" style="color:var(--t3);">Premium rotalara erişim yok</span></div>
+      </div>
+      <div class="plan popular" onclick="selPlan(this)">
+        <div class="plan-bdg">En Popüler</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price" id="pro-price">₺79</div><div class="plan-per" id="pro-per">/ ay</div>
+        <div class="plan-div"></div>
+        <div class="plan-feat"><span class="pf-ico">◆</span><span class="pf-t">Aylık 100 kredi</span></div>
+        <div class="plan-feat"><span class="pf-ico">✓</span><span class="pf-t">Tüm premium rotalara erişim</span></div>
+        <div class="plan-feat"><span class="pf-ico">🎯</span><span class="pf-t">Kişiselleştirilmiş öneriler</span></div>
+      </div>
+      <div class="plan" onclick="selPlan(this)">
+        <div class="plan-bdg gold">Creator</div>
+        <div class="plan-name">Creator Pro</div>
+        <div class="plan-price gold" id="cr-price">₺149</div><div class="plan-per" id="cr-per">/ ay</div>
+        <div class="plan-div"></div>
+        <div class="plan-feat"><span class="pf-ico">◆</span><span class="pf-t">Aylık 300 kredi</span></div>
+        <div class="plan-feat"><span class="pf-ico">💰</span><span class="pf-t">%70 gelir payı</span></div>
+        <div class="plan-feat"><span class="pf-ico">📊</span><span class="pf-t">Gelişmiş analitik panel</span></div>
+        <div class="plan-feat"><span class="pf-ico">⚡</span><span class="pf-t">Öncelikli onay süreci</span></div>
+      </div>
+    </div>
+    <div style="padding:14px 20px 0;"><button class="btn-red" onclick="showToast('✅ Abonelik başlatılıyor...')">Planı Seç & Devam Et</button></div>
+    <div class="sec-h" style="padding-top:14px;"><span class="sec-t">Kredi Paketleri</span></div>
+    <div class="cr-packs">
+      <div class="crp" onclick="showToast('◆ 50 Kredi satın alınıyor...')"><div class="crp-ico">◆</div><div class="crp-val">50</div><div class="crp-cr">Kredi</div><div class="crp-price">₺29</div></div>
+      <div class="crp popular" onclick="showToast('◆ 150 Kredi satın alınıyor...')"><div class="crp-ico">💎</div><div class="crp-val">150</div><div class="crp-cr">Kredi</div><div class="crp-price">₺79</div><div class="crp-bonus">+30 bonus 🎁</div></div>
+      <div class="crp" onclick="showToast('◆ 350 Kredi satın alınıyor...')"><div class="crp-ico">🔮</div><div class="crp-val">350</div><div class="crp-cr">Kredi</div><div class="crp-price">₺149</div><div class="crp-bonus">+100 bonus 🎁</div></div>
+      <div class="crp" onclick="showToast('◆ 1000 Kredi satın alınıyor...')"><div class="crp-ico">👑</div><div class="crp-val">1000</div><div class="crp-cr">Kredi</div><div class="crp-price">₺349</div><div class="crp-bonus">+400 bonus 🎁</div></div>
+    </div>
+    <div class="pad-b"></div>
+  </div>
+
+  <!-- ══ BİLDİRİMLER ══ -->
+  <div class="scr" id="bildirimler">
+    <div class="pbar">
+      <div style="display:flex;align-items:center;gap:10px;"><div class="back-btn" onclick="goBack()">←</div><div class="pbar-t">Bildirimler</div></div>
+      <span style="font-size:11px;color:var(--red);font-weight:600;cursor:pointer;" onclick="markAll()">Tümünü Oku</span>
+    </div>
+    <div class="sec-h"><span class="sec-t" style="font-size:12px;color:var(--t2);">Bugün</span></div>
+    <div class="notif-list">
+      <div class="notif unread" onclick="rdNotif(this)"><div class="notif-ava" style="background:rgba(60,205,100,.15);">⭐</div><div class="notif-body"><div class="notif-t"><strong>Elif Yılmaz</strong> rotanı 5 yıldız ile değerlendirdi.</div><div class="notif-time">2 dakika önce</div></div><div class="notif-dot"></div></div>
+      <div class="notif unread" onclick="rdNotif(this)"><div class="notif-ava" style="background:rgba(74,158,255,.15);">👤</div><div class="notif-body"><div class="notif-t"><strong>Mehmet Çelik</strong> seni takip etmeye başladı.</div><div class="notif-time">18 dk önce</div><div class="notif-action"><span class="notif-btn" onclick="event.stopPropagation();showToast('✅ Takip edildi!')">Takip Et</span></div></div><div class="notif-dot"></div></div>
+      <div class="notif unread" onclick="rdNotif(this)"><div class="notif-ava" style="background:rgba(245,197,24,.15);">◆</div><div class="notif-body"><div class="notif-t">Bu hafta rotanı <strong>47 kişi</strong> gezdi! 🎉</div><div class="notif-time">1 saat önce</div></div><div class="notif-dot"></div></div>
+    </div>
+    <div class="sec-h" style="padding-top:10px;"><span class="sec-t" style="font-size:12px;color:var(--t2);">Bu Hafta</span></div>
+    <div class="notif-list">
+      <div class="notif" onclick="showToast('🎯 Kaşif rozeti!')"><div class="notif-ava" style="background:rgba(232,41,74,.15);">🎯</div><div class="notif-body"><div class="notif-t">Yeni rozet: <strong>Kaşif</strong> 🗺️ Tebrikler!</div><div class="notif-time">2 gün önce</div></div></div>
+      <div class="notif" onclick="goTo('kredi')"><div class="notif-ava" style="background:rgba(155,111,255,.15);">🎁</div><div class="notif-body"><div class="notif-t"><strong>Özel teklif!</strong> Creator Pro'da bu hafta %30 indirim.</div><div class="notif-time">3 gün önce</div><div class="notif-action"><span class="notif-btn">İncele</span></div></div></div>
+      <div class="notif" onclick="openRota('balat')"><div class="notif-ava" style="background:rgba(60,205,100,.15);">🗺️</div><div class="notif-body"><div class="notif-t"><strong>Barış Demir</strong> yeni rota ekledi: "Balat'ın Gizli Sokakları"</div><div class="notif-time">4 gün önce</div><div class="notif-action"><span class="notif-btn">Rotayı Gör</span></div></div></div>
+    </div>
+    <div class="pad-b"></div>
+  </div>
+
+  <!-- ══ PROFİL ══ -->
+  <div class="scr" id="profil">
+    <div class="p-cov"><div class="p-cov-bg"></div><div class="p-cov-pat"></div></div>
+    <div class="p-main">
+      <div class="p-toprow"><div class="p-ava">🧭</div><button class="edit-btn" onclick="showToast('✏️ Profil düzenleme...')">Düzenle</button></div>
+      <div class="p-name">Serhat Rençper</div>
+      <div class="p-handle">@serhat.renc • Eskişehir 📍</div>
+      <div class="p-bio">Şehirleri rota rota keşfediyorum. Creator & gezgin. GettinOut kurucu ortağı 🗺️</div>
+      <div class="p-cr-card" onclick="goTo('kredi')"><span style="font-size:24px;">◆</span><div style="flex:1;"><div class="pcc-val">48 Kredi</div><div class="pcc-key">Mevcut bakiye</div></div><div class="pcc-btn">Yükle</div></div>
+      <div class="p-stats"><div class="pst"><div class="pst-v">3</div><div class="pst-k">Rota</div></div><div class="pst"><div class="pst-v">214</div><div class="pst-k">Takipçi</div></div><div class="pst"><div class="pst-v">47</div><div class="pst-k">Takip</div></div><div class="pst"><div class="pst-v">12</div><div class="pst-k">Gezilen</div></div></div>
+      <div class="p-badges"><div class="pbdg gold">🏆 Top Creator</div><div class="pbdg purple">🌟 Seviye 3</div><div class="pbdg">✓ Onaylı</div><div class="pbdg">🎯 İlk Adım</div></div>
+      <div class="p-sec-t">Rotalarım</div>
+      <div class="myrota" onclick="openRota('kadikoylezzet')"><div class="mr-e">🥘</div><div class="mr-info"><div class="mr-t">Kadıköy Lezzet Rotası</div><div class="mr-m">3 sa • 8 durak • 347 gezildi</div></div><div class="mr-right"><div class="mr-r">⭐ 4.8</div><div class="mr-p pfree">Ücretsiz</div></div></div>
+      <div class="myrota" onclick="openRota('eskisehir')"><div class="mr-e">🏛️</div><div class="mr-info"><div class="mr-t">Eskişehir Tarihi Çarşı</div><div class="mr-m">2 sa • 6 durak • 89 gezildi</div></div><div class="mr-right"><div class="mr-r">⭐ 4.9</div><div class="mr-p pcred">◆ 10</div></div></div>
+      <div class="myrota" onclick="openRota('odunpazari')"><div class="mr-e">🎨</div><div class="mr-info"><div class="mr-t">Odunpazarı Modern</div><div class="mr-m">1.5 sa • 4 durak • 112 gezildi</div></div><div class="mr-right"><div class="mr-r">⭐ 5.0</div><div class="mr-p pfree">Ücretsiz</div></div></div>
+      <div class="p-sec-t" style="margin-top:14px;">Ayarlar</div>
+      <div class="setlist">
+        <div class="setitem" onclick="goTo('bildirimler')"><div class="si-ico">🔔</div><div class="si-lbl">Bildirimler</div><div style="background:var(--red);color:#fff;border-radius:7px;padding:2px 7px;font-size:10px;font-weight:700;">3</div></div>
+        <div class="setitem" onclick="goTo('kredi')"><div class="si-ico">◆</div><div class="si-lbl">Kredi & Abonelik</div><div class="si-arr">›</div></div>
+        <div class="setitem" onclick="showToast('🔒 Gizlilik...')"><div class="si-ico">🔒</div><div class="si-lbl">Gizlilik</div><div class="si-arr">›</div></div>
+        <div class="setitem" onclick="showToast('💳 Ödeme...')"><div class="si-ico">💳</div><div class="si-lbl">Ödeme Yöntemleri</div><div class="si-arr">›</div></div>
+        <div class="setitem" onclick="showToast('❓ Yardım...')"><div class="si-ico">❓</div><div class="si-lbl">Yardım & Destek</div><div class="si-arr">›</div></div>
+        <div class="setitem"><div class="si-ico">🚪</div><div class="si-lbl" style="color:var(--red);">Çıkış Yap</div><div class="si-arr" style="color:var(--red);">›</div></div>
+      </div>
+    </div>
+    <div class="pad-b"></div>
+  </div>
+
+  <!-- ══ CREATOR PROFİL ══ -->
+  <div class="scr" id="creator-profil">
+    <div class="cp-cov"><div class="cp-cov-bg" style="background:linear-gradient(135deg,#0a2014,#051008,#021008);"></div><div class="cp-cov-pat"></div><div class="cp-back" onclick="goBack()">←</div></div>
+    <div class="cp-main">
+      <div class="cp-toprow"><div class="cp-ava" style="background:linear-gradient(135deg,var(--green),#0a8a30);">🧭</div><button class="fol-btn" id="fol-btn" onclick="toggleFollow()">+ Takip Et</button></div>
+      <div class="cp-name">Barış Demir</div>
+      <div class="cp-handle">@baris.rota • İzmir 📍</div>
+      <div class="cp-bio">Doğa & gastronomi rotaları. Ege'yi keşfediyorum, sizinle paylaşıyorum. Serbest fotoğrafçı 📸</div>
+      <div class="cp-stats"><div class="cpst"><div class="cpst-v">12</div><div class="cpst-k">Rota</div></div><div class="cpst"><div class="cpst-v">1.4K</div><div class="cpst-k">Takipçi</div></div><div class="cpst"><div class="cpst-v">4.9</div><div class="cpst-k">Puan</div></div><div class="cpst"><div class="cpst-v">2.1K</div><div class="cpst-k">Gezildi</div></div></div>
+      <div class="cp-bdgs"><div class="cpb gold">🏆 Top Creator</div><div class="cpb purple">🌟 Seviye 5</div><div class="cpb">✓ Onaylı</div><div class="cpb">🌿 Doğa</div><div class="cpb">🍽️ Gastronomi</div></div>
+      <div class="p-sec-t">Rotaları</div>
+      <div class="cp-rcard" onclick="openRota('kadikoylezzet')"><div class="cpr-e">🥘</div><div style="flex:1;"><div class="cpr-t">Kadıköy Lezzet Rotası</div><div class="cpr-m">3 sa • 8 durak • İstanbul</div></div><div class="cpr-right"><div class="cpr-r">⭐ 4.8</div><div class="cpr-p pfree">Ücretsiz</div></div></div>
+      <div class="cp-rcard" onclick="openRota('izmir')"><div class="cpr-e">🏖️</div><div style="flex:1;"><div class="cpr-t">İzmir Kordon Turu</div><div class="cpr-m">2 sa • 5 durak • İzmir</div></div><div class="cpr-right"><div class="cpr-r">⭐ 4.9</div><div class="cpr-p pcred">◆ 15</div></div></div>
+      <div class="cp-rcard" onclick="openRota('egekahvalti')"><div class="cpr-e">🫒</div><div style="flex:1;"><div class="cpr-t">Ege Kahvaltı Rotası</div><div class="cpr-m">2.5 sa • 6 durak • Çeşme</div></div><div class="cpr-right"><div class="cpr-r">⭐ 5.0</div><div class="cpr-p pfree">Ücretsiz</div></div></div>
+    </div>
+    <div class="pad-b"></div>
+  </div>
+
+  </div><!-- /screens -->
+
+  <!-- BOTTOM NAV -->
+  <div class="bnav" id="bnav" style="display:none;">
+    <div class="ni on" data-s="home" onclick="goTo('home')"><span class="ni-ico">🏠</span><span class="ni-lbl">Ana Sayfa</span></div>
+    <div class="ni" data-s="rotalar" onclick="goTo('rotalar')"><span class="ni-ico">🗺️</span><span class="ni-lbl">Rotalar</span></div>
+    <div class="ni" data-s="olustur" onclick="goTo('olustur')"><div class="ni-plus">＋</div><span class="ni-lbl">Oluştur</span></div>
+    <div class="ni" data-s="rozetler" onclick="goTo('rozetler')"><span class="ni-ico">🏆</span><span class="ni-lbl">Rozetler</span></div>
+    <div class="ni" data-s="profil" onclick="goTo('profil')"><span class="ni-ico">👤</span><span class="ni-lbl">Profil</span></div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"><span id="toast-msg"></span></div>
+
+</div><!-- /phone -->
+</div><!-- /wrap -->
+
+<script>
+// ═══ VERİ ═══
+const R = {
+  kadikoylezzet:{emoji:'🥘',bg:'linear-gradient(135deg,#2a0a12,#1a0810,#0d0408)',title:'Kadıköy Lezzet Rotası',pills:[{t:'Gastronomi',c:'gastro'},{t:'3 Saat',c:'sure'},{t:'Ücretsiz',c:'free'}],cr:{init:'B',name:'Barış Demir',sub:'4.9 ⭐ • 12 rota',bg:'linear-gradient(135deg,#E8294A,#f80)'},stats:[{v:'8',k:'Durak'},{v:'2.3km',k:'Mesafe'},{v:'347',k:'Gezildi'},{v:'4.8⭐',k:'Puan'}],desc:'Kadıköy\'ün lezzet haritasını çıkardık. Tarihi çarşıdan meyve balığına, nostaljik kahvecilere uzanan bu rotada İstanbul\'un en otantik tatlarını keşfedeceksin.',stops:[{n:'Çiya Sofrası',d:'Anadolu mutfağından mevsim yemekleri',bs:[{t:'Ortak ✓',c:'p'},{t:'%15 İndirim',c:'d'}]},{n:'Kadıköy Çarşısı',d:'Baharatlar, peynirler, zeytinler...',bs:[{t:'📸 Fotoğraf Noktası',c:'t'}]},{n:'Moda Sahili',d:'Boğaz manzaralı kısa yürüyüş molası',bs:[]},{n:'Duvar Kahve',d:'Sanat galerisinde bir kahve durağı',bs:[{t:'Ortak ✓',c:'p'}]},{n:'Balık Ekmek',d:'Köprü altında meşhur balık ekmek',bs:[]},{n:'Karabatak',d:'Gizli avlusu olan nefis mekan',bs:[{t:'%10 İndirim',c:'d'}]},{n:'Karga Bar',d:'Vintage atmosferli akşamüstü durağı',bs:[{t:'Ortak ✓',c:'p'}]},{n:'Moda İskelesi',d:'Rotanın sonu, gün batımı izle',bs:[{t:'📸 En iyi fotoğraf',c:'t'}]}],reviews:[{name:'Elif Y.',ava:'E',color:'#4A9EFF',stars:'⭐⭐⭐⭐⭐',text:'Harika! Çiya Sofrası\'ndaki indirim süper.'},{name:'Mehmet Ç.',ava:'M',color:'#9B6FFF',stars:'⭐⭐⭐⭐⭐',text:'Aileyle gittik, herkese tavsiye.'}],cta:'Rotayı Başlat 🗺️',free:true},
+  balat:{emoji:'🏛️',bg:'linear-gradient(135deg,#0a152d,#050a18)',title:'Balat\'ın Gizli Sokakları',pills:[{t:'Kültür',c:'kultur'},{t:'2 Saat',c:'sure'},{t:'Ücretsiz',c:'free'}],cr:{init:'B',name:'Barış Demir',sub:'4.9 ⭐ • 12 rota',bg:'linear-gradient(135deg,#E8294A,#f80)'},stats:[{v:'6',k:'Durak'},{v:'1.8km',k:'Mesafe'},{v:'203',k:'Gezildi'},{v:'4.9⭐',k:'Puan'}],desc:'İstanbul\'un en renkli tarihi mahallesi Balat\'ın bilinmeyen köşelerini keşfet. Her dönemeçte seni bekleyen bir hikaye var.',stops:[{n:'Balat Kapısı',d:'Tarihi surların başlangıç noktası',bs:[{t:'📸 Fotoğraf',c:'t'}]},{n:'Renkli Evler',d:'İkonik renkli binaların sokağı',bs:[{t:'📸 En popüler kare',c:'t'}]},{n:'Peter Han Kahve',d:'Antika dolu tarihi kahvehane',bs:[{t:'Ortak ✓',c:'p'},{t:'%10 İndirim',c:'d'}]},{n:'Fener Rum Patrikhanesi',d:'Tarihi dini yapı',bs:[{t:'💡 Açık saatlere dikkat',c:'t'}]},{n:'Balat Sahil',d:'Haliç\'e bakan son durak',bs:[]}],reviews:[{name:'Ayşe K.',ava:'A',color:'#E8294A',stars:'⭐⭐⭐⭐⭐',text:'Peter Han gerçekten çok güzel!'},{name:'Can T.',ava:'C',color:'#3CCD64',stars:'⭐⭐⭐⭐',text:'Fotoğraf için mükemmel.'}],cta:'Rotayı Başlat 🗺️',free:true},
+  beyoglu:{emoji:'🌙',bg:'linear-gradient(135deg,#1a0a2d,#0d0516)',title:'Beyoğlu Gece Rotası',pills:[{t:'Gece',c:'gece'},{t:'3 Saat',c:'sure'},{t:'◆ 10 Kredi',c:'credit'}],cr:{init:'E',name:'Elif Yılmaz',sub:'4.8 ⭐ • 5 rota',bg:'linear-gradient(135deg,#4A9EFF,#0055CC)'},stats:[{v:'7',k:'Durak'},{v:'3.1km',k:'Mesafe'},{v:'89',k:'Gezildi'},{v:'4.6⭐',k:'Puan'}],desc:'İstiklal\'den Asmalımescit\'e uzanan gece rotasında şehrin nabzını hissedeceksin.',stops:[{n:'Taksim Meydanı',d:'Başlangıç noktası',bs:[]},{n:'İstiklal Caddesi',d:'Tarihi tramvay güzergahı',bs:[]},{n:'Asmalımescit',d:'Meyhane sokağında akşam yemeği',bs:[{t:'Ortak ✓',c:'p'},{t:'%20 İndirim',c:'d'}]},{n:'Galata Kulesi',d:'Gece ışıklarıyla görülmesi şart',bs:[{t:'💡 Bilet önceden al',c:'t'}]},{n:'Karaköy Güllüoğlu',d:'Gece baklavası molası',bs:[{t:'Ortak ✓',c:'p'}]},{n:'Karaköy Meydanı',d:'Son durak — Boğaz manzarası',bs:[{t:'📸 Gece fotoğrafı',c:'t'}]}],reviews:[{name:'Ali R.',ava:'A',color:'#9B6FFF',stars:'⭐⭐⭐⭐⭐',text:'Mükemmel bir gece!'},{name:'Selin B.',ava:'S',color:'#F5C518',stars:'⭐⭐⭐⭐',text:'Galata\'ya gece çıkmak bambaşka.'}],cta:'◆ 10 Kredi ile Başla',free:false},
+  belgrad:{emoji:'🌿',bg:'linear-gradient(135deg,#0a2014,#051008)',title:'Belgrad Ormanı Rotası',pills:[{t:'Doğa',c:'doga'},{t:'4 Saat',c:'sure'},{t:'Ücretsiz',c:'free'}],cr:{init:'B',name:'Barış Demir',sub:'4.9 ⭐ • 12 rota',bg:'linear-gradient(135deg,#E8294A,#f80)'},stats:[{v:'5',k:'Durak'},{v:'8km',k:'Mesafe'},{v:'156',k:'Gezildi'},{v:'4.7⭐',k:'Puan'}],desc:'İstanbul\'un akciğeri Belgrad Ormanı\'nda nefes al. Göller, köprüler ve orman yolları seni bekliyor.',stops:[{n:'Giriş Noktası',d:'Ana kapıdan başla',bs:[{t:'💡 Erken gel',c:'t'}]},{n:'Büyükdere Gölü',d:'Doğanın içinde piknik molası',bs:[]},{n:'Uzun Kemer',d:'Osmanlı su kemeri kalıntıları',bs:[{t:'📸 Tarihi fotoğraf',c:'t'}]},{n:'Kirazlıbend Barajı',d:'Panoramik manzara noktası',bs:[{t:'📸 En iyi manzara',c:'t'}]},{n:'Orman Kafesi',d:'Doğanın içinde son kahve',bs:[{t:'Ortak ✓',c:'p'},{t:'%10 İndirim',c:'d'}]}],reviews:[{name:'Emre S.',ava:'E',color:'#3CCD64',stars:'⭐⭐⭐⭐⭐',text:'Hafta sonları için mükemmel!'},{name:'Zeynep K.',ava:'Z',color:'#4A9EFF',stars:'⭐⭐⭐⭐',text:'Uzun kemer büyüleyici.'}],cta:'Rotayı Başlat 🗺️',free:true},
+  karakoy:{emoji:'🎨',bg:'linear-gradient(135deg,#1a100a,#0d0805)',title:'Karaköy Sanat Rotası',pills:[{t:'Sanat',c:'sanat'},{t:'2.5 Saat',c:'sure'},{t:'◆ 15 Kredi',c:'credit'}],cr:{init:'E',name:'Elif Yılmaz',sub:'4.8 ⭐ • 5 rota',bg:'linear-gradient(135deg,#4A9EFF,#0055CC)'},stats:[{v:'9',k:'Durak'},{v:'2.1km',k:'Mesafe'},{v:'94',k:'Gezildi'},{v:'4.8⭐',k:'Puan'}],desc:'Karaköy\'ün sanat galerilerinden alternatif mekanlarına uzanan yaratıcı bir rota.',stops:[{n:'SALT Galata',d:'Modern sanat ve mimarlık merkezi',bs:[{t:'📸',c:'t'}]},{n:'Meşher',d:'Türk resim sanatının kalbi',bs:[{t:'Ortak ✓',c:'p'},{t:'Ücretsiz Giriş',c:'d'}]},{n:'Karaköy Güllüoğlu',d:'Baklava molası — zorunlu durak',bs:[{t:'Ortak ✓',c:'p'}]},{n:'Yeldeğirmeni Sokak',d:'Sokak sanatı turu',bs:[{t:'📸 Grafiti noktaları',c:'t'}]}],reviews:[{name:'Pınar M.',ava:'P',color:'#FF4D6A',stars:'⭐⭐⭐⭐⭐',text:'Sanat tutkunları için ideal!'}],cta:'◆ 15 Kredi ile Başla',free:false},
+  izmir:{emoji:'🏖️',bg:'linear-gradient(135deg,#0a1a2d,#051018)',title:'İzmir Kordon Turu',pills:[{t:'Kültür',c:'kultur'},{t:'2 Saat',c:'sure'},{t:'◆ 15 Kredi',c:'credit'}],cr:{init:'B',name:'Barış Demir',sub:'4.9 ⭐ • 12 rota',bg:'linear-gradient(135deg,#E8294A,#f80)'},stats:[{v:'5',k:'Durak'},{v:'4.5km',k:'Mesafe'},{v:'312',k:'Gezildi'},{v:'4.9⭐',k:'Puan'}],desc:'İzmir\'in efsanevi Kordon\'unda yürü, Ege\'nin rüzgarını hisset.',stops:[{n:'Kordon Başı',d:'Deniz kenarında başlangıç',bs:[]},{n:'Kemeraltı',d:'Tarihi çarşı ve bezestanlar',bs:[{t:'Ortak ✓',c:'p'}]},{n:'Asansör',d:'İzmir\'in simgesi ve manzarası',bs:[{t:'📸 En iyi manzara',c:'t'}]},{n:'Alsancak Sahil',d:'Son durak — gün batımı',bs:[{t:'Ortak ✓',c:'p'},{t:'%10 İndirim',c:'d'}]}],reviews:[{name:'Hasan G.',ava:'H',color:'#4A9EFF',stars:'⭐⭐⭐⭐⭐',text:'Asansör\'den manzara inanılmaz!'}],cta:'◆ 15 Kredi ile Başla',free:false},
+  ankara:{emoji:'🏰',bg:'linear-gradient(135deg,#1a1a0a,#0d0d05)',title:'Ankara Kalesi Rotası',pills:[{t:'Kültür',c:'kultur'},{t:'3 Saat',c:'sure'},{t:'Ücretsiz',c:'free'}],cr:{init:'S',name:'Serhat Rençper',sub:'4.9 ⭐ • 3 rota',bg:'linear-gradient(135deg,#E8294A,#f80)'},stats:[{v:'6',k:'Durak'},{v:'3.2km',k:'Mesafe'},{v:'178',k:'Gezildi'},{v:'4.7⭐',k:'Puan'}],desc:'Ankara\'nın tarihi kalesinden Anıtkabir\'e uzanan eşsiz bir deneyim.',stops:[{n:'Ankara Kalesi Girişi',d:'Tarihi surlar ve görkemli kapı',bs:[{t:'📸',c:'t'}]},{n:'Kale İçi',d:'Osmanlı dönemi evler ve panorama',bs:[]},{n:'Hamamönü',d:'Restore tarihi Osmanlı mahallesi',bs:[{t:'📸',c:'t'}]},{n:'Anıt Kabir',d:'Atatürk\'ün anıt mezarı',bs:[]},{n:'Kızılay Meydanı',d:'Son durak — şehir merkezi',bs:[]}],reviews:[{name:'Alper B.',ava:'A',color:'#E8294A',stars:'⭐⭐⭐⭐',text:'Hamamönü gerçekten çok güzel.'}],cta:'Rotayı Başlat 🗺️',free:true},
+  egekahvalti:{emoji:'🫒',bg:'linear-gradient(135deg,#1a1a0a,#051008)',title:'Ege Kahvaltı Rotası',pills:[{t:'Gastronomi',c:'gastro'},{t:'2.5 Saat',c:'sure'},{t:'Ücretsiz',c:'free'}],cr:{init:'B',name:'Barış Demir',sub:'4.9 ⭐ • 12 rota',bg:'linear-gradient(135deg,#E8294A,#f80)'},stats:[{v:'6',k:'Durak'},{v:'2km',k:'Mesafe'},{v:'189',k:'Gezildi'},{v:'5.0⭐',k:'Puan'}],desc:'Çeşme\'nin sabahı başka güzel. Zeytinlikler, taze otlar ve el yapımı peynirler eşliğinde Ege kahvaltısının en iyisi.',stops:[{n:'Zeytinyağı Evi',d:'Sızma zeytinyağı tadımı',bs:[{t:'Ortak ✓',c:'p'},{t:'%20 İndirim',c:'d'}]},{n:'Köy Pazarı',d:'Yerel üreticilerden taze ürünler',bs:[{t:'📸 En renkli kare',c:'t'}]},{n:'Ege Kahvaltı Evi',d:'Meşhur serpme Ege kahvaltısı',bs:[{t:'Ortak ✓',c:'p'},{t:'%15 İndirim',c:'d'}]},{n:'Çeşme Sahil',d:'Kahvaltı sonrası sahil yürüyüşü',bs:[{t:'📸 Sabah denizi',c:'t'}]}],reviews:[{name:'Yavuz K.',ava:'Y',color:'#F5C518',stars:'⭐⭐⭐⭐⭐',text:'Hayatımın en iyi kahvaltısı!'},{name:'Nuray D.',ava:'N',color:'#3CCD64',stars:'⭐⭐⭐⭐⭐',text:'Zeytinyağı Evi inanılmazdı.'}],cta:'Rotayı Başlat 🗺️',free:true},
+  eskisehir:{emoji:'🏛️',bg:'linear-gradient(135deg,#0a102d,#050818)',title:'Eskişehir Tarihi Çarşı',pills:[{t:'Kültür',c:'kultur'},{t:'2 Saat',c:'sure'},{t:'◆ 10 Kredi',c:'credit'}],cr:{init:'S',name:'Serhat Rençper',sub:'4.9 ⭐ • 3 rota',bg:'linear-gradient(135deg,#E8294A,#f80)'},stats:[{v:'6',k:'Durak'},{v:'2.5km',k:'Mesafe'},{v:'89',k:'Gezildi'},{v:'4.9⭐',k:'Puan'}],desc:'Eskişehir\'in tarihi çarşısından modern sanat mekanlarına uzanan bir yolculuk.',stops:[{n:'Odunpazarı',d:'Tarihi Osmanlı evleri mahallesi',bs:[{t:'📸',c:'t'}]},{n:'Lületaşı Çarşısı',d:'Dünyaca ünlü lületaşı atölyeleri',bs:[{t:'Ortak ✓',c:'p'}]},{n:'Porsuk Kanalı',d:'Gondol turu ve sahil keyfi',bs:[{t:'💡 Gondol tutun!',c:'t'}]},{n:'Köprübaşı',d:'Akşam son durak, canlı müzik',bs:[{t:'Ortak ✓',c:'p'},{t:'%10 İndirim',c:'d'}]}],reviews:[{name:'Cansu A.',ava:'C',color:'#9B6FFF',stars:'⭐⭐⭐⭐⭐',text:'Gondol şart! Lületaşı atölyesi ilginçti.'}],cta:'◆ 10 Kredi ile Başla',free:false},
+  odunpazari:{emoji:'🎨',bg:'linear-gradient(135deg,#1a0a2d,#0d0516)',title:'Odunpazarı Modern',pills:[{t:'Sanat',c:'sanat'},{t:'1.5 Saat',c:'sure'},{t:'Ücretsiz',c:'free'}],cr:{init:'S',name:'Serhat Rençper',sub:'4.9 ⭐ • 3 rota',bg:'linear-gradient(135deg,#E8294A,#f80)'},stats:[{v:'4',k:'Durak'},{v:'1.2km',k:'Mesafe'},{v:'112',k:'Gezildi'},{v:'5.0⭐',k:'Puan'}],desc:'Odunpazarı\'nın tarihi dokusuyla ödüllü OMM müzesinin modern mimarisini bir arada keşfet.',stops:[{n:'OMM Müzesi',d:'Kengo Kuma\'nın ödüllü yapısı',bs:[{t:'📸 Mimari fotoğraf',c:'t'}]},{n:'Tarihi Evler',d:'Restore Osmanlı konaklarının sokağı',bs:[{t:'📸 En iyi kare',c:'t'}]},{n:'Odunpazarı Kafesi',d:'Tarihi bir evin içindeki kafe',bs:[{t:'Ortak ✓',c:'p'},{t:'%15 İndirim',c:'d'}]},{n:'Porsuk Manzarası',d:'Kanalı gören son durak',bs:[]}],reviews:[{name:'Hasan G.',ava:'H',color:'#4A9EFF',stars:'⭐⭐⭐⭐⭐',text:'OMM mimarisi inanılmaz!'}],cta:'Rotayı Başlat 🗺️',free:true}
+};
+
+// ═══ STATE ═══
+let cur='splash', hist=[], saved=new Set(), following=false, tt=null;
+let navIdx=2, curKey='kadikoylezzet', abMode='aylik';
+const NAV_STOPS=['Çiya Sofrası','Kadıköy Çarşısı','Moda Sahili','Duvar Kahve','Balık Ekmek','Karabatak','Karga Bar','Moda İskelesi'];
+const NO_NAV=['splash','ob1','ob2','ob3','rota-detay','navigasyon','creator-profil','arama','kredi','bildirimler'];
+
+// ═══ NAVIGATION ═══
+function goTo(id,addH=true){
+  if(addH&&cur!==id) hist.push(cur);
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('active','ani-in','ani-back'));
+  const t=document.getElementById(id);
+  t.classList.add('active','ani-in');
+  t.scrollTop=0;
+  cur=id;
+  document.getElementById('bnav').style.display=NO_NAV.includes(id)?'none':'flex';
+  document.querySelectorAll('.ni').forEach(n=>{
+    n.classList.remove('on');
+    if(n.dataset.s===id) n.classList.add('on');
+  });
+}
+function goBack(){
+  const p=hist.pop()||'home';
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('active','ani-in','ani-back'));
+  const t=document.getElementById(p);
+  t.classList.add('active','ani-back');
+  t.scrollTop=0;
+  cur=p;
+  document.getElementById('bnav').style.display=NO_NAV.includes(p)?'none':'flex';
+  document.querySelectorAll('.ni').forEach(n=>{
+    n.classList.remove('on');
+    if(n.dataset.s===p) n.classList.add('on');
+  });
+}
+
+// ═══ ROTA DETAY ═══
+function openRota(key){
+  const r=R[key];
+  if(!r){showToast('⚠️ Bu rota yakında ekleniyor...');return;}
+  curKey=key;
+  document.getElementById('rd-hbg').style.background=r.bg;
+  document.getElementById('rd-emoji').textContent=r.emoji;
+  document.getElementById('rd-title').textContent=r.title;
+  document.getElementById('rd-cr-ava').textContent=r.cr.init;
+  document.getElementById('rd-cr-ava').style.background=r.cr.bg;
+  document.getElementById('rd-cr-name').textContent=r.cr.name;
+  document.getElementById('rd-cr-sub').textContent=r.cr.sub;
+  document.getElementById('rd-pills').innerHTML=r.pills.map(p=>`<span class="pill ${p.c}">${p.t}</span>`).join('');
+  document.getElementById('rd-stats').innerHTML=r.stats.map(s=>`<div class="rdst"><div class="rdst-v">${s.v}</div><div class="rdst-k">${s.k}</div></div>`).join('');
+  document.getElementById('rd-desc').textContent=r.desc;
+  document.getElementById('rd-stops').innerHTML=r.stops.map((s,i)=>`
+    <div class="stop-row">
+      <div class="sdot ${i===0?'red':'dim'}">${i+1}</div>
+      <div class="scard">
+        <div class="scard-t">${s.n}</div>
+        <div class="scard-d">${s.d}</div>
+        ${s.bs.length?`<div class="scard-bs">${s.bs.map(b=>`<span class="sb ${b.c}">${b.t}</span>`).join('')}</div>`:''}
+      </div>
+    </div>`).join('');
+  document.getElementById('rd-reviews').innerHTML=r.reviews.map(rv=>`
+    <div class="rv">
+      <div class="rv-top">
+        <div class="rv-ava" style="background:${rv.color}22;color:${rv.color};">${rv.ava}</div>
+        <div class="rv-name">${rv.name}</div>
+        <div class="rv-stars">${rv.stars}</div>
+      </div>
+      <div class="rv-text">${rv.text}</div>
+    </div>`).join('');
+  const btn=document.getElementById('rd-cta-btn');
+  btn.textContent=r.cta;
+  btn.onclick=()=>r.free?startNav(r):showToast('◆ Kredi kullanılıyor...');
+  const sv=document.getElementById('rd-save');
+  sv.textContent=saved.has(key)?'♥':'♡';
+  sv.classList.toggle('saved',saved.has(key));
+  goTo('rota-detay');
+}
+function toggleSave(){
+  const sv=document.getElementById('rd-save');
+  if(saved.has(curKey)){
+    saved.delete(curKey);sv.textContent='♡';sv.classList.remove('saved');showToast('💔 Favorilerden çıkarıldı');
+  } else {
+    saved.add(curKey);sv.textContent='♥';sv.classList.add('saved');showToast('❤️ Favorilere eklendi!');
+  }
+}
+
+// ═══ CREATOR ═══
+function openCreator(){goTo('creator-profil');}
+function toggleFollow(){
+  following=!following;
+  const b=document.getElementById('fol-btn');
+  if(following){b.textContent='✓ Takip Ediliyor';b.classList.add('fing');showToast('✅ Barış Demir takip ediliyor!');}
+  else{b.textContent='+ Takip Et';b.classList.remove('fing');showToast('Takip bırakıldı');}
+}
+
+// ═══ NAVİGASYON ═══
+function startNav(r){
+  navIdx=2;
+  document.getElementById('nav-rota-name').textContent=r.title;
+  updateNav();
+  goTo('navigasyon');
+}
+const NAV_DESC=['Anadolu mutfağından mevsim yemekleri.','Baharatlar, peynirler, zeytinler...','Kadıköy sahilinde yürüyüş ve Boğaz manzarası.','Sanat galerisinde bir kahve durağı.','Köprü altında meşhur balık ekmek.','Gizli avlusu olan nefis mekan.','Vintage atmosferli akşamüstü durağı.','Rotanın sonu, gün batımı izle.'];
+const NAV_DIST=['180m','80m','320m','420m','260m','190m','310m','50m'];
+const NAV_ETA=['2 dk','1 dk','4 dk','5 dk','3 dk','2 dk','4 dk','1 dk'];
+function updateNav(){
+  const t=NAV_STOPS.length;
+  document.getElementById('nav-status').textContent=`Devam ediyor • Durak ${navIdx+1}/${t}`;
+  document.getElementById('cs-num').textContent=`DURAK ${navIdx+1}/${t}`;
+  document.getElementById('cs-name').textContent=NAV_STOPS[navIdx];
+  document.getElementById('cs-desc').textContent=NAV_DESC[navIdx]||'Durak açıklaması.';
+  document.getElementById('cs-dist').textContent=NAV_DIST[navIdx]||'200m';
+  document.getElementById('cs-eta').textContent=NAV_ETA[navIdx]||'3 dk';
+  document.getElementById('nav-cur-pin').textContent=`${navIdx+1} ${NAV_STOPS[navIdx]}`;
+  document.getElementById('nav-prog').innerHTML=NAV_STOPS.map((_,i)=>`<div class="np-seg ${i<navIdx?'done':i===navIdx?'cur':''}"></div>`).join('');
+}
+function navNext(){
+  if(navIdx<NAV_STOPS.length-1){navIdx++;updateNav();showToast('✅ Durak tamamlandı!');}
+  else{document.getElementById('comp').classList.add('show');}
+}
+
+// ═══ ARAMA ═══
+const allRotas=Object.entries(R).map(([k,v])=>({key:k,...v}));
+function renderArama(q=''){
+  const f=q?allRotas.filter(r=>r.title.toLowerCase().includes(q.toLowerCase())):allRotas;
+  document.getElementById('ara-count').textContent=`${q?'Sonuçlar':'Tüm Rotalar'} (${f.length})`;
+  if(!f.length){
+    document.getElementById('ara-results').innerHTML=`<div class="no-res"><div class="nr-ico">🔍</div><div class="nr-t">Sonuç bulunamadı</div><p>Farklı bir arama dene.</p></div>`;
+    return;
+  }
+  document.getElementById('ara-results').innerHTML=f.map(r=>`
+    <div class="ar-item" onclick="openRota('${r.key}')">
+      <span style="font-size:26px;">${r.emoji}</span>
+      <div style="flex:1;">
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;">${r.title}</div>
+        <div style="font-size:10px;color:var(--t2);margin-top:2px;">${r.stats[0].v} durak • ${r.stats[1].v} • ${r.stats[2].v} gezildi</div>
+      </div>
+      <div class="ar-r">
+        <div class="ar-rating">⭐ ${r.stats[3].v.replace('⭐','')}</div>
+        <div class="ar-price ${r.free?'pfree':'pcred'}">${r.free?'Ücretsiz':'Kredili'}</div>
+      </div>
+    </div>`).join('');
+}
+function araFilter(v){renderArama(v);}
+renderArama();
+
+// ═══ FİLTRE ═══
+function toggleChip(el){el.classList.toggle('on');}
+function selRb(el){document.querySelectorAll('.rb-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+
+// ═══ OB ═══
+function selOb(el,group){
+  document.querySelectorAll(`#${group} .ob-item, #${group} .ob-list-item`).forEach(i=>i.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+// ═══ ABONELİK ═══
+function setAb(m){
+  abMode=m;
+  document.querySelectorAll('.abt').forEach((b,i)=>b.classList.toggle('on',i===(m==='aylik'?0:1)));
+  if(m==='yillik'){
+    document.getElementById('pro-price').textContent='₺47';
+    document.getElementById('pro-per').textContent='/ ay (yıllık ₺564)';
+    document.getElementById('cr-price').textContent='₺89';
+    document.getElementById('cr-per').textContent='/ ay (yıllık ₺1.068)';
+  } else {
+    document.getElementById('pro-price').textContent='₺79';
+    document.getElementById('pro-per').textContent='/ ay';
+    document.getElementById('cr-price').textContent='₺149';
+    document.getElementById('cr-per').textContent='/ ay';
+  }
+}
+function selPlan(el){document.querySelectorAll('.plan').forEach(p=>p.classList.remove('sel'));el.classList.add('sel');showToast('✅ Plan seçildi!');}
+
+// ═══ BİLDİRİMLER ═══
+function rdNotif(el){el.classList.remove('unread');const d=el.querySelector('.notif-dot');if(d)d.remove();}
+function markAll(){document.querySelectorAll('.notif').forEach(n=>{n.classList.remove('unread');const d=n.querySelector('.notif-dot');if(d)d.remove();});showToast('✓ Tüm bildirimler okundu');}
+
+// ═══ TOAST ═══
+function showToast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  if(tt)clearTimeout(tt);
+  tt=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// ═══ CATS ═══
+document.querySelectorAll('.cat').forEach(c=>c.addEventListener('click',function(){
+  document.querySelectorAll('.cat').forEach(x=>x.classList.remove('on'));
+  this.classList.add('on');
+}));
+
+// INIT
+document.getElementById('bnav').style.display='none';
+</script>
+</body>
+</html>

@@ -6,6 +6,38 @@
 <title>GettinOut</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <style>
+
+  /* Search Tab */
+.cat-pill {
+  white-space:nowrap;padding:7px 14px;border-radius:20px;border:1.5px solid #e8e8e8;
+  background:#fff;font-size:12px;font-weight:500;cursor:pointer;
+  font-family:'Inter',sans-serif;color:#555;transition:all 0.2s;flex-shrink:0
+}
+.active-pill { background:#FF5722;color:#fff;border-color:#FF5722 }
+.mode-btn {
+  padding:7px 12px;border-radius:10px;border:1.5px solid #e8e8e8;
+  background:#fff;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;
+  color:#555;transition:all 0.2s
+}
+.active-mode { background:#FFF3F0;color:#FF5722;border-color:#FF5722 }
+.result-card {
+  background:#fff;border-radius:14px;margin-bottom:10px;overflow:hidden;
+  border:1px solid #f0f0f0;cursor:pointer;transition:transform 0.2s;
+  display:flex;align-items:stretch
+}
+.result-card:active { transform:scale(0.98) }
+.distance-badge {
+  background:#FFF3F0;color:#FF5722;font-size:11px;font-weight:600;
+  padding:3px 8px;border-radius:6px;border:1px solid #FFD0C0
+}
+@keyframes aiPulse {
+  0%,100% { transform:scale(0.8);opacity:0.5 }
+  50% { transform:scale(1.2);opacity:1 }
+}
+@keyframes slideInUp {
+  from { transform:translateY(20px);opacity:0 }
+  to { transform:translateY(0);opacity:1 }
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:#0A0A0A;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;font-family:'Inter',sans-serif}
 
@@ -223,6 +255,98 @@ body{background:#0A0A0A;min-height:100vh;display:flex;align-items:center;justify
 
 </style>
 </head>
+  <!-- SEARCH SCREEN -->
+<div id="screen-search" class="screen" style="display:none;height:100%;overflow-y:auto;background:#F5F5F7;">
+
+  <!-- Header -->
+  <div style="background:#fff;padding:16px 16px 0;position:sticky;top:0;z-index:10;border-bottom:1px solid #f0f0f0;">
+    <h2 style="font-family:'Playfair Display',serif;font-size:20px;color:#1a1a1a;margin:0 0 12px">Rota Bul</h2>
+    
+    <!-- Search input -->
+    <div style="position:relative;margin-bottom:12px">
+      <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:0.4" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="search-input" type="text" placeholder="Şehir, rota veya kategori..." 
+        style="width:100%;padding:10px 12px 10px 36px;border:1.5px solid #e8e8e8;border-radius:12px;font-size:14px;background:#F5F5F7;box-sizing:border-box;outline:none;font-family:'Inter',sans-serif"
+        oninput="filterSearchResults()">
+    </div>
+
+    <!-- Category pills -->
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none">
+      <button onclick="selectCategory(this,'tümü')" class="cat-pill active-pill" data-cat="tümü">✦ Tümü</button>
+      <button onclick="selectCategory(this,'tarihi')" class="cat-pill" data-cat="tarihi">🏛️ Tarihi</button>
+      <button onclick="selectCategory(this,'doğa')" class="cat-pill" data-cat="doğa">🌿 Doğa</button>
+      <button onclick="selectCategory(this,'gastronomi')" class="cat-pill" data-cat="gastronomi">🍽️ Gastronomi</button>
+      <button onclick="selectCategory(this,'gece')" class="cat-pill" data-cat="gece">🌙 Gece Hayatı</button>
+      <button onclick="selectCategory(this,'sanat')" class="cat-pill" data-cat="sanat">🎨 Sanat</button>
+    </div>
+  </div>
+
+  <!-- AI Filter Panel -->
+  <div style="margin:12px;background:#fff;border-radius:16px;padding:16px;border:1px solid #f0f0f0">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <div style="width:28px;height:28px;background:linear-gradient(135deg,#FF5722,#FF8A65);border-radius:8px;display:flex;align-items:center;justify-content:center">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+      </div>
+      <span style="font-size:13px;font-weight:600;color:#1a1a1a">AI Filtrele</span>
+      <span style="font-size:11px;color:#999;margin-left:auto">Konuma göre sırala</span>
+    </div>
+
+    <!-- Travel mode -->
+    <p style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 8px">Seyahat Biçimi</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px" id="travel-modes">
+      <button onclick="selectMode(this,'yürüyüş')" class="mode-btn active-mode" data-mode="yürüyüş">🚶 Yürüyüş</button>
+      <button onclick="selectMode(this,'bisiklet')" class="mode-btn" data-mode="bisiklet">🚲 Bisiklet</button>
+      <button onclick="selectMode(this,'motor')" class="mode-btn" data-mode="motor">🏍️ Motor</button>
+      <button onclick="selectMode(this,'araç')" class="mode-btn" data-mode="araç">🚗 Özel Araç</button>
+      <button onclick="selectMode(this,'toplu')" class="mode-btn" data-mode="toplu">🚌 Toplu Taşıma</button>
+    </div>
+
+    <!-- Duration slider -->
+    <p style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 8px">Ortalama Süre</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <input type="range" id="duration-slider" min="30" max="300" value="120" step="30"
+        style="flex:1;accent-color:#FF5722" oninput="updateDuration(this.value)">
+      <span id="duration-label" style="font-size:13px;font-weight:600;color:#FF5722;min-width:50px;text-align:right">2 saat</span>
+    </div>
+
+    <!-- AI Search button -->
+    <button onclick="runAISearch()" id="ai-search-btn"
+      style="width:100%;padding:12px;background:#FF5722;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+      AI ile Rota Bul
+    </button>
+  </div>
+
+  <!-- AI Loading Animation -->
+  <div id="ai-loading" style="display:none;margin:0 12px;background:#fff;border-radius:16px;padding:20px;border:1px solid #f0f0f0;text-align:center">
+    <div id="ai-dots" style="display:flex;justify-content:center;gap:6px;margin-bottom:12px">
+      <div class="ai-dot" style="width:8px;height:8px;background:#FF5722;border-radius:50%;animation:aiPulse 1.2s ease-in-out infinite"></div>
+      <div class="ai-dot" style="width:8px;height:8px;background:#FF5722;border-radius:50%;animation:aiPulse 1.2s ease-in-out 0.2s infinite"></div>
+      <div class="ai-dot" style="width:8px;height:8px;background:#FF5722;border-radius:50%;animation:aiPulse 1.2s ease-in-out 0.4s infinite"></div>
+    </div>
+    <p id="ai-status-text" style="font-size:13px;color:#888;margin:0">Konumunuza göre rotalar aranıyor...</p>
+    <div id="ai-progress" style="height:3px;background:#f0f0f0;border-radius:2px;margin-top:12px;overflow:hidden">
+      <div id="ai-progress-bar" style="height:100%;background:#FF5722;width:0%;transition:width 0.3s ease;border-radius:2px"></div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="search-results" style="margin:12px;display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <p style="font-size:13px;font-weight:600;color:#1a1a1a;margin:0" id="results-count">8 rota bulundu</p>
+      <span style="font-size:11px;color:#FF5722;font-weight:500">📍 Yakından uzağa</span>
+    </div>
+    <div id="results-list"></div>
+  </div>
+
+  <!-- Default state -->
+  <div id="search-default" style="margin:20px 12px;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">🗺️</div>
+    <p style="font-size:15px;font-weight:600;color:#1a1a1a;margin:0 0 6px">Eskişehir'i Keşfet</p>
+    <p style="font-size:13px;color:#888;margin:0">Filtreleri seçip AI ile en yakın rotaları bul</p>
+  </div>
+
+</div>
 <body>
 <div class="phone">
 
@@ -1223,9 +1347,138 @@ function switchTab(el, tabId) {
     if(t) t.style.display = (id === tabId) ? (id === 'tab-rozetler' ? 'block' : 'block') : 'none';
   });
 }
+// ========== SEARCH TAB JS ==========
 
+const searchRoutes = [
+  { id:1, title:"Odunpazarı Tarihi Yürüyüş", cat:"tarihi", mode:"yürüyüş", duration:90, distance:0.3, rating:4.8, stops:7, price:49, tag:"En Yakın" },
+  { id:2, title:"Porsuk Nehri Kenarı", cat:"doğa", mode:"yürüyüş", duration:60, distance:0.8, rating:4.6, stops:5, price:0, tag:"Ücretsiz" },
+  { id:3, title:"Eskişehir Lezzet Turu", cat:"gastronomi", mode:"yürüyüş", duration:150, distance:1.2, rating:4.9, stops:6, price:79, tag:"Popüler" },
+  { id:4, title:"Kurşunlu Külliyesi & Çevresi", cat:"tarihi", mode:"araç", duration:120, distance:2.1, rating:4.7, stops:8, price:59, tag:"" },
+  { id:5, title:"Sazova Parkı Bisiklet Turu", cat:"doğa", mode:"bisiklet", duration:75, distance:3.4, rating:4.5, stops:4, price:35, tag:"" },
+  { id:6, title:"Gece Müzik & Bar Rotası", cat:"gece", mode:"yürüyüş", duration:180, distance:1.8, rating:4.7, stops:5, price:0, tag:"Gece" },
+  { id:7, title:"Sokak Sanatı Keşfi", cat:"sanat", mode:"yürüyüş", duration:90, distance:2.5, rating:4.4, stops:9, price:29, tag:"" },
+  { id:8, title:"Motor ile Eskişehir Çevresi", cat:"doğa", mode:"motor", duration:240, distance:15, rating:4.8, stops:6, price:89, tag:"Macera" }
+];
+
+let activeCategory = 'tümü';
+let activeModes = ['yürüyüş'];
+let activeDuration = 120;
+
+function selectCategory(btn, cat) {
+  document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active-pill'));
+  btn.classList.add('active-pill');
+  activeCategory = cat;
+}
+
+function selectMode(btn, mode) {
+  btn.classList.toggle('active-mode');
+  if (btn.classList.contains('active-mode')) {
+    if (!activeModes.includes(mode)) activeModes.push(mode);
+  } else {
+    activeModes = activeModes.filter(m => m !== mode);
+    if (activeModes.length === 0) { btn.classList.add('active-mode'); activeModes.push(mode); }
+  }
+}
+
+function updateDuration(val) {
+  activeDuration = parseInt(val);
+  const h = Math.floor(val/60), m = val%60;
+  document.getElementById('duration-label').textContent =
+    h > 0 ? (m > 0 ? `${h}s ${m}dk` : `${h} saat`) : `${m} dk`;
+}
+
+function runAISearch() {
+  document.getElementById('search-default').style.display = 'none';
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('ai-loading').style.display = 'block';
+  document.getElementById('ai-search-btn').disabled = true;
+  document.getElementById('ai-search-btn').style.opacity = '0.6';
+
+  const steps = [
+    { text:"Konumunuza göre rotalar aranıyor...", progress:20 },
+    { text:"AI seyahat biçiminizi analiz ediyor...", progress:45 },
+    { text:"Süre ve kategori filtreleri uygulanıyor...", progress:70 },
+    { text:"Rotalar yakından uzağa sıralanıyor...", progress:90 },
+    { text:"Hazır! Rotalar bulundu ✓", progress:100 }
+  ];
+
+  let step = 0;
+  const interval = setInterval(() => {
+    if (step < steps.length) {
+      document.getElementById('ai-status-text').textContent = steps[step].text;
+      document.getElementById('ai-progress-bar').style.width = steps[step].progress + '%';
+      step++;
+    } else {
+      clearInterval(interval);
+      setTimeout(() => {
+        document.getElementById('ai-loading').style.display = 'none';
+        showSearchResults();
+        document.getElementById('ai-search-btn').disabled = false;
+        document.getElementById('ai-search-btn').style.opacity = '1';
+        document.getElementById('ai-progress-bar').style.width = '0%';
+      }, 400);
+    }
+  }, 520);
+}
+
+function showSearchResults() {
+  let filtered = searchRoutes.filter(r => {
+    const catOk = activeCategory === 'tümü' || r.cat === activeCategory;
+    const modeOk = activeModes.length === 0 || activeModes.includes(r.mode);
+    const durOk = r.duration <= activeDuration + 30;
+    return catOk && modeOk && durOk;
+  });
+  filtered.sort((a, b) => a.distance - b.distance);
+
+  const list = document.getElementById('results-list');
+  list.innerHTML = '';
+  document.getElementById('results-count').textContent = `${filtered.length} rota bulundu`;
+
+  filtered.forEach((r, i) => {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.style.animationDelay = (i * 0.07) + 's';
+    card.style.animation = 'slideInUp 0.4s ease forwards';
+    card.style.opacity = '0';
+    const catIcons = {tarihi:'🏛️',doğa:'🌿',gastronomi:'🍽️',gece:'🌙',sanat:'🎨'};
+    card.innerHTML = `
+      <div style="width:70px;background:#FFF3F0;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">${catIcons[r.cat]||'📍'}</div>
+      <div style="padding:12px;flex:1;min-width:0">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
+          <p style="font-size:13px;font-weight:600;color:#1a1a1a;margin:0;line-height:1.3">${r.title}</p>
+          ${r.tag ? `<span class="distance-badge" style="flex-shrink:0">${r.tag}</span>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:11px;color:#888">⭐ ${r.rating}</span>
+          <span style="font-size:11px;color:#888">⏱ ${r.duration < 60 ? r.duration+'dk' : Math.floor(r.duration/60)+'s'+(r.duration%60?r.duration%60+'dk':'')}</span>
+          <span style="font-size:11px;color:#888">📍 ${r.stops} durak</span>
+          <span style="font-size:11px;font-weight:600;color:#FF5722">📍 ${r.distance < 1 ? (r.distance*1000).toFixed(0)+'m' : r.distance.toFixed(1)+'km'}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+          <span style="font-size:13px;font-weight:700;color:#1a1a1a">${r.price === 0 ? 'Ücretsiz' : '₺'+r.price}</span>
+          <span style="font-size:11px;color:#aaa">${r.mode === 'yürüyüş' ? '🚶' : r.mode === 'bisiklet' ? '🚲' : r.mode === 'motor' ? '🏍️' : r.mode === 'araç' ? '🚗' : '🚌'} ${r.mode}</span>
+        </div>
+      </div>
+    `;
+    card.onclick = () => showScreen('route-detail');
+    list.appendChild(card);
+  });
+
+  document.getElementById('search-results').style.display = 'block';
+}
+
+function filterSearchResults() {
+  // Canlı text filtresi
+  const q = document.getElementById('search-input').value.toLowerCase();
+  if (!q) return;
+  document.querySelectorAll('.result-card').forEach(card => {
+    const title = card.querySelector('p').textContent.toLowerCase();
+    card.style.display = title.includes(q) ? 'flex' : 'none';
+  });
+}
 // Route detail screen needs bottom nav hidden on load if it were active
 showScreen('home');
+  
 </script>
 </body>
 </html>

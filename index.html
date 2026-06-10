@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GettinOut</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0A0A0A;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;font-family:'Inter',sans-serif}
+
+/* ─── PHONE ─── */
+.phone{width:390px;height:844px;background:#F5F5F7;border-radius:48px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 1px #2A2A2A,0 0 0 10px #111,0 0 0 12px #252525,0 50px 100px rgba(0,0,0,.8);position:relative}
+
+/* ─── STATUS BAR ─── */
+.sb{flex-shrink:0;height:44px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.sb-time{font-size:15px;font-weight:600;color:#1A1A1A}
+.sb-icons{display:flex;align-items:center;gap:6px}
+
+/* ─── SCREENS ─── */
+.screen{flex:1;display:none;flex-direction:column;overflow:hidden;min-height:0}
+.screen.active{display:flex}
+.scr-scroll{flex:1;overflow-y:auto;overflow-x:hidden}
+.scr-scroll::-webkit-scrollbar{display:none}
+
+/* ─── BOTTOM NAV ─── */
+.bnav{flex-shrink:0;background:#fff;border-top:1px solid #ECECEC;display:flex;height:68px;padding-bottom:8px}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border:none;background:none;padding:8px 0;transition:all .15s}
+.bnav-label{font-size:10px;font-weight:500;color:#C0BCBA}
+.bnav-item.active .bnav-label{color:#FF5722;font-weight:600}
+.bnav-icon{transition:transform .15s}
+.bnav-item.active .bnav-icon{transform:scale(1.1)}
+
+/* ─── COMMON COMPONENTS ─── */
+.top-bar{background:#fff;display:flex;align-items:center;justify-content:space-between;padding:12px 18px 13px;border-bottom:1px solid #F0F0F0;flex-shrink:0}
+.top-bar-title{font-size:15px;font-weight:700;color:#1A1A1A}
+.icon-btn{width:36px;height:36px;border-radius:50%;background:#F5F5F7;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+.section-title{font-size:15px;font-weight:700;color:#1A1A1A}
+.see-all{font-size:12px;font-weight:600;color:#FF5722;cursor:pointer}
+
+/* HERO CARD (featured route) */
+.feat-card{margin:14px 16px;border-radius:20px;overflow:hidden;position:relative;height:196px;cursor:pointer;flex-shrink:0}
+.feat-img{width:100%;height:100%;object-fit:cover;display:block}
+.feat-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.78) 0%,rgba(0,0,0,.05) 55%)}
+.feat-badge{position:absolute;top:12px;left:12px;background:#FF5722;color:#fff;border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:.02em}
+.feat-save{position:absolute;top:10px;right:12px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.feat-content{position:absolute;bottom:0;left:0;right:0;padding:14px 14px 14px}
+.feat-tag{display:inline-block;background:rgba(255,255,255,.18);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.22);border-radius:20px;padding:3px 9px;font-size:10px;color:#fff;font-weight:500;margin-bottom:7px}
+.feat-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:7px}
+.feat-meta{display:flex;align-items:center;gap:10px}
+.feat-meta span{font-size:11px;color:rgba(255,255,255,.85);font-weight:500}
+.feat-price{margin-left:auto;background:#FF5722;color:#fff;border-radius:16px;padding:4px 11px;font-size:12px;font-weight:700}
+
+/* HORIZONTAL SCROLL */
+.h-scroll{display:flex;gap:11px;overflow-x:auto;padding:0 16px 2px;scrollbar-width:none}
+.h-scroll::-webkit-scrollbar{display:none}
+
+/* ROUTE CARD (small, horizontal) */
+.route-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.07);cursor:pointer;flex-shrink:0;width:155px}
+.route-card-photo{height:90px;position:relative;overflow:hidden}
+.route-card-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.route-card-photo .grad-bg{width:100%;height:100%;display:block}
+.route-card-info{padding:9px 10px 10px}
+.route-card-cat{font-size:9.5px;font-weight:600;color:#FF5722;margin-bottom:3px;text-transform:uppercase;letter-spacing:.03em}
+.route-card-name{font-size:12px;font-weight:700;color:#1A1A1A;line-height:1.3;margin-bottom:5px}
+.route-card-meta{display:flex;align-items:center;justify-content:space-between}
+.route-card-pills{display:flex;gap:5px}
+.route-card-pill{font-size:9.5px;color:#B0A89E;font-weight:500}
+.route-card-star{font-size:10px;color:#F59E0B;font-weight:700}
+
+/* LIST ROUTE CARD */
+.list-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.07);cursor:pointer;margin-bottom:10px;display:flex;height:82px}
+.list-card-photo{width:90px;flex-shrink:0;overflow:hidden}
+.list-card-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.list-card-photo .grad-bg{width:100%;height:100%;display:block}
+.list-card-info{flex:1;padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between}
+.list-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.list-card-name{font-size:12.5px;font-weight:700;color:#1A1A1A;line-height:1.3}
+.list-card-price{font-size:11px;font-weight:700;color:#FF5722;flex-shrink:0}
+.list-card-bottom{display:flex;align-items:center;gap:8px}
+.list-card-tag{background:#FFF3EE;border-radius:8px;padding:2px 7px;font-size:9.5px;color:#E84B1A;font-weight:600}
+.list-card-meta{font-size:10.5px;color:#B0A89E}
+
+/* CATEGORY CHIPS */
+.cat-wrap{display:flex;gap:8px;overflow-x:auto;padding:0 16px;scrollbar-width:none;flex-shrink:0}
+.cat-wrap::-webkit-scrollbar{display:none}
+.cat-chip{flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:1.5px solid transparent}
+.cat-chip.active{background:#FF5722;color:#fff;border-color:#FF5722}
+.cat-chip.inactive{background:#fff;color:#6B6560;border-color:#EBEBEB}
+
+/* TREND CARD */
+.trend-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;border-radius:14px;margin-bottom:8px;box-shadow:0 1px 5px rgba(0,0,0,.06);cursor:pointer}
+.trend-num{font-size:20px;font-weight:800;color:#F0EBE5;width:28px;flex-shrink:0}
+.trend-photo{width:44px;height:44px;border-radius:10px;overflow:hidden;flex-shrink:0}
+.trend-photo img{width:100%;height:100%;object-fit:cover}
+.trend-photo .grad-bg{width:100%;height:100%}
+.trend-name{font-size:12.5px;font-weight:700;color:#1A1A1A;margin-bottom:2px}
+.trend-sub{font-size:10.5px;color:#B0A89E}
+.trend-badge{margin-left:auto;font-size:10px;font-weight:600;color:#22C55E;background:#ECFDF5;border-radius:8px;padding:3px 8px;flex-shrink:0}
+
+/* ─── HOME HEADER ─── */
+.home-hd{background:#fff;padding:14px 18px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.home-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#1A1A1A}
+.home-logo span{color:#FF5722}
+.home-hd-right{display:flex;align-items:center;gap:10px}
+.notif-btn{position:relative;width:36px;height:36px;border-radius:50%;background:#F5F5F7;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.notif-dot{position:absolute;top:7px;right:8px;width:7px;height:7px;background:#FF5722;border-radius:50%;border:1.5px solid #fff}
+
+/* HOME SEARCH */
+.home-search{margin:8px 16px 14px;background:#F5F5F7;border-radius:12px;display:flex;align-items:center;gap:8px;padding:11px 14px;cursor:pointer}
+.home-search-text{font-size:13px;color:#C0BCBA;font-weight:400}
+
+/* ─── PROFILE ─── */
+.profile-hero{background:linear-gradient(160deg,#1A1A1A 0%,#2D2D2D 100%);padding:24px 20px 20px;flex-shrink:0}
+.profile-top{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.profile-ava{width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,#FF6035,#FF9A3C);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0;border:3px solid rgba(255,255,255,.2)}
+.profile-name{font-size:18px;font-weight:700;color:#fff;margin-bottom:3px}
+.profile-handle{font-size:12px;color:rgba(255,255,255,.55)}
+.profile-edit-btn{margin-left:auto;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:12px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.profile-stats{display:flex;gap:0}
+.pstat{flex:1;text-align:center}
+.pstat+.pstat{border-left:1px solid rgba(255,255,255,.1)}
+.pstat-val{font-size:18px;font-weight:800;color:#fff}
+.pstat-label{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px}
+
+.profile-tabs{display:flex;background:#fff;border-bottom:1px solid #F0F0F0;flex-shrink:0}
+.p-tab{flex:1;padding:12px 0;font-size:12px;font-weight:600;color:#C0BCBA;text-align:center;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.p-tab.active{color:#FF5722;border-bottom-color:#FF5722}
+
+.badge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px}
+.badge-item{background:#fff;border-radius:14px;padding:12px 8px;text-align:center;box-shadow:0 1px 5px rgba(0,0,0,.06)}
+.badge-icon{font-size:24px;margin-bottom:5px}
+.badge-name{font-size:10.5px;font-weight:600;color:#1A1A1A;margin-bottom:2px}
+.badge-desc{font-size:9.5px;color:#B0A89E}
+.badge-item.locked{opacity:.45}
+
+/* ─── EXPLORE ─── */
+.explore-search{margin:12px 16px 14px;background:#fff;border-radius:12px;display:flex;align-items:center;gap:8px;padding:11px 14px;box-shadow:0 1px 5px rgba(0,0,0,.06)}
+.explore-search input{flex:1;border:none;outline:none;font-family:'Inter',sans-serif;font-size:13.5px;color:#1A1A1A;background:transparent}
+.explore-search input::placeholder{color:#C0BCBA}
+
+/* ─── MAP SCREEN ─── */
+.map-screen-wrap{flex:1;position:relative;overflow:hidden}
+.map-screen-wrap svg{width:100%;height:100%;display:block}
+.map-fab{position:absolute;bottom:16px;right:16px;width:46px;height:46px;background:#FF5722;border-radius:50%;box-shadow:0 4px 14px rgba(255,87,34,.45);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.map-floating-card{position:absolute;bottom:70px;left:16px;right:16px;background:#fff;border-radius:16px;padding:12px 14px;box-shadow:0 4px 16px rgba(0,0,0,.14);display:flex;align-items:center;gap:12px;cursor:pointer}
+.mfc-photo{width:48px;height:48px;border-radius:10px;overflow:hidden;flex-shrink:0}
+.mfc-photo img{width:100%;height:100%;object-fit:cover}
+.mfc-title{font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:2px}
+.mfc-sub{font-size:11px;color:#B0A89E}
+.mfc-arrow{margin-left:auto;width:28px;height:28px;background:#F5F5F7;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+/* ─── ROUTE DETAIL (v2) ─── */
+.rd-hero{position:relative;height:200px;overflow:hidden;background:#1A1A1A;flex-shrink:0}
+.rd-hero img{width:100%;height:100%;object-fit:cover;display:block}
+.rd-hero-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.08) 50%)}
+.rd-hero-back{position:absolute;top:12px;left:14px;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.rd-hero-save{position:absolute;top:12px;right:14px;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.rd-hero-content{position:absolute;bottom:0;left:0;right:0;padding:14px 16px}
+.rd-hero-tag{display:inline-block;background:rgba(255,255,255,.18);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.22);border-radius:20px;padding:3px 9px;font-size:10px;color:#fff;font-weight:500;margin-bottom:7px}
+.rd-hero-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#fff;line-height:1.22;margin-bottom:8px}
+.rd-hero-pills{display:flex;gap:6px}
+.rd-hero-pill{background:rgba(255,255,255,.16);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.22);border-radius:20px;padding:3px 9px;font-size:10px;color:#fff;font-weight:500}
+
+.creator-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 0;background:#fff;margin-top:0}
+.creator-left{display:flex;align-items:center;gap:10px}
+.creator-ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#FF6035,#FF9A3C);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.creator-name{font-size:13px;font-weight:600;color:#1A1A1A}
+.creator-sub{font-size:10.5px;color:#AAA;margin-top:1px}
+.price-btn{background:#1A1A1A;color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:13.5px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer}
+
+.stats-row{display:flex;gap:8px;margin:12px 16px;background:transparent}
+.stat-box{flex:1;background:#fff;border-radius:12px;padding:10px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.stat-val{font-size:15px;font-weight:700;color:#1A1A1A}
+.stat-label{font-size:10px;color:#AAA;margin-top:2px}
+
+.rd-section-hd{display:flex;align-items:center;justify-content:space-between;padding:0 16px;margin-bottom:10px}
+.rd-section-hd h3{font-size:14.5px;font-weight:700;color:#1A1A1A}
+.lock-badge{display:flex;align-items:center;gap:4px;background:#FFF3EE;border:1px solid #FFD4C0;border-radius:20px;padding:3px 9px;font-size:10px;color:#E84B1A;font-weight:600}
+
+.map-outer{margin:0 16px 14px}
+.map-card{border-radius:18px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.10)}
+.map-card svg{display:block;width:100%}
+
+@keyframes draw{from{stroke-dashoffset:900}to{stroke-dashoffset:0}}
+.route-line{stroke-dasharray:900;stroke-dashoffset:900;animation:draw 2s cubic-bezier(.4,0,.2,1) forwards .3s}
+@keyframes pulse2{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.8);opacity:0}}
+.pulse2{transform-box:fill-box;transform-origin:center;animation:pulse2 2.2s ease-out infinite 2s}
+@keyframes pop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+.mk{opacity:0;animation:pop .35s cubic-bezier(.34,1.56,.64,1) forwards}
+.mk1{animation-delay:.5s}.mk2{animation-delay:.75s}.mk3{animation-delay:.95s}
+.mk4{animation-delay:1.15s}.mk5{animation-delay:1.35s}.mk6{animation-delay:1.55s}.mk7{animation-delay:1.75s}
+
+.stops-wrap2{padding:0 16px 12px}
+.stop-row{display:flex;gap:10px;align-items:flex-start}
+.stop-left{width:24px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding-top:3px}
+.snum{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.snum.open{background:#FF5722;color:#fff}.snum.lock{background:#E0DAD4;color:#AAA}
+.snum.start{background:#1A1A1A;color:#fff}.snum.done{background:#22C55E;color:#fff}
+.sline{width:2px;min-height:88px;background:#ECEAE6;margin:3px 0}
+.stop-card{flex:1;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 5px rgba(0,0,0,.07);margin-bottom:9px}
+.stop-photo2{width:100%;height:80px;position:relative;overflow:hidden}
+.stop-photo2 img{width:100%;height:100%;object-fit:cover;display:block}
+.stop-photo2 .grad-bg{width:100%;height:100%;display:block}
+.stop-photo2.blurred img{filter:blur(14px);transform:scale(1.12)}
+.stop-photo2.blurred .grad-bg{filter:blur(14px);transform:scale(1.12)}
+.lock-ov{position:absolute;inset:0;background:rgba(0,0,0,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.lock-circ{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center}
+.lock-txt{font-size:9px;color:rgba(255,255,255,.85);font-weight:600;letter-spacing:.05em}
+.stop-info{padding:9px 12px 10px}
+.stop-name{font-size:12.5px;font-weight:600;color:#1A1A1A;margin-bottom:2px}
+.stop-name.hidden{color:#D0CAC4}
+.stop-desc{font-size:10.5px;color:#B0A89E;line-height:1.45}
+
+.rd-bottom{flex-shrink:0;background:rgba(255,255,255,.97);backdrop-filter:blur(16px);border-top:1px solid rgba(0,0,0,.07);padding:12px 18px 20px}
+.cta-btn{width:100%;background:#1A1A1A;color:#fff;border:none;border-radius:14px;padding:15px 20px;font-family:'Inter',sans-serif;font-size:14.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+.cta-right{display:flex;align-items:center;gap:8px}
+.cta-price{background:#FF5722;color:#fff;padding:4px 12px;border-radius:8px;font-size:13px;font-weight:700}
+
+/* Section spacing */
+.section-row{display:flex;align-items:center;justify-content:space-between;padding:0 16px;margin-bottom:10px;margin-top:18px}
+
+</style>
+</head>
+<body>
+<div class="phone">
+
+<!-- STATUS BAR -->
+<div class="sb">
+  <span class="sb-time">9:41</span>
+  <div class="sb-icons">
+    <svg width="17" height="12" viewBox="0 0 17 12" fill="#1A1A1A"><rect x="0" y="3" width="3" height="9" rx=".8"/><rect x="4.5" y="2" width="3" height="10" rx=".8"/><rect x="9" y="1" width="3" height="11" rx=".8"/><rect x="13.5" y="0" width="3" height="12" rx=".8"/></svg>
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round"><path d="M8 2.5C5.2 2.5 2.7 3.7 1 5.7"/><path d="M8 2.5C10.8 2.5 13.3 3.7 15 5.7"/><path d="M8 5.5C6.2 5.5 4.5 6.3 3.4 7.6"/><path d="M8 5.5C9.8 5.5 11.5 6.3 12.6 7.6"/><circle cx="8" cy="10.5" r="1.2" fill="#1A1A1A"/></svg>
+    <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="#1A1A1A" stroke-opacity=".35"/><rect x="2" y="2" width="16" height="8" rx="2" fill="#1A1A1A"/><path d="M23 4.5v3a1.5 1.5 0 0 1 0-3z" fill="#1A1A1A" fill-opacity=".4"/></svg>
+  </div>
+</div>
+
+<!-- ═══════ SCREEN: HOME ═══════ -->
+<div class="screen active" id="screen-home">
+  <div class="scr-scroll">
+
+    <!-- Header -->
+    <div class="home-hd">
+      <div class="home-logo">Gettin<span>Out</span></div>
+      <div class="home-hd-right">
+        <button class="notif-btn" onclick="showScreen('notifs')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-dot"></span>
+        </button>
+        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#FF6035,#FF9A3C);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;cursor:pointer" onclick="showScreen('profile')">SR</div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="home-search" onclick="showScreen('explore')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C0BCBA" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <span class="home-search-text">Şehir veya rota ara...</span>
+    </div>
+
+    <!-- Featured -->
+    <div class="feat-card" onclick="showScreen('route-detail')">
+      <div class="feat-grad"></div>
+      <div class="feat-badge">⚡ Öne Çıkan</div>
+      <div class="feat-save">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="feat-content">
+        <div class="feat-tag">🏛️ Kültür &amp; Tarih</div>
+        <div class="feat-title">Eskişehir Tarihi<br>Yürüyüş Rotası</div>
+        <div class="feat-meta">
+          <span>⭐ 4.8</span>
+          <span>·</span>
+          <span>🚶 4.2 km</span>
+          <span>·</span>
+          <span>📍 7 durak</span>
+          <div class="feat-price">₺ 49</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="section-row" style="margin-top:4px">
+      <span class="section-title">Kategoriler</span>
+    </div>
+    <div class="cat-wrap" id="cat-wrap" style="margin-bottom:14px">
+      <div class="cat-chip active" onclick="selectCat(this)">Tümü</div>
+      <div class="cat-chip inactive" onclick="selectCat(this)">🏛️ Kültür</div>
+      <div class="cat-chip inactive" onclick="selectCat(this)">🌿 Doğa</div>
+      <div class="cat-chip inactive" onclick="selectCat(this)">🍽️ Gastronomi</div>
+      <div class="cat-chip inactive" onclick="selectCat(this)">🌙 Gece</div>
+      <div class="cat-chip inactive" onclick="selectCat(this)">🎨 Sanat</div>
+    </div>
+
+    <!-- Horizontal route cards -->
+    <div class="section-row" style="margin-top:0">
+      <span class="section-title">🔥 Popüler</span>
+      <span class="see-all">Tümünü Gör →</span>
+    </div>
+    <div class="h-scroll" style="margin-bottom:18px">
+      <!-- Card 1 -->
+      <div class="route-card" onclick="showScreen('route-detail')">
+          <div class="route-card-photo"><img src="frigya.png" alt="Frigya Rotası" /></div>
+        <div class="route-card-info">
+          <div class="route-card-cat">Kültür</div>
+          <div class="route-card-name">Kurşunlu Külliyesi Turu</div>
+          <div class="route-card-meta">
+            <div class="route-card-pills"><span class="route-card-pill">⏱ 1.5 sa</span></div>
+            <span class="route-card-star">⭐ 4.9</span>
+          </div>
+        </div>
+      </div>
+      <!-- Card 2 -->
+      <div class="route-card" onclick="showScreen('route-detail')">
+        <div class="route-card-photo"><div class="grad-bg" style="background:linear-gradient(135deg,#5090C0,#1A4870)"></div></div>
+        <div class="route-card-info">
+          <div class="route-card-cat">Doğa</div>
+          <div class="route-card-name">Porsuk Nehir Yürüyüşü</div>
+          <div class="route-card-meta">
+            <div class="route-card-pills"><span class="route-card-pill">⏱ 2 sa</span></div>
+            <span class="route-card-star">⭐ 4.7</span>
+          </div>
+        </div>
+      </div>
+      <!-- Card 3 -->
+      <div class="route-card" onclick="showScreen('route-detail')">
+          <div class="route-card-photo"><img src="frigya.png" alt="Frigya Rotası" /></div>
+        <div class="route-card-info">
+          <div class="route-card-cat">Aile</div>
+          <div class="route-card-name">Sazova Park Keşfi</div>
+          <div class="route-card-meta">
+            <div class="route-card-pills"><span class="route-card-pill">⏱ 3 sa</span></div>
+            <span class="route-card-star">⭐ 4.8</span>
+          </div>
+        </div>
+      </div>
+      <!-- Card 4 -->
+      <div class="route-card" onclick="showScreen('route-detail')">
+        <div class="route-card-photo"><div class="grad-bg" style="background:linear-gradient(135deg,#C4824A,#6A3820)"></div></div>
+        <div class="route-card-info">
+          <div class="route-card-cat">Gastronomi</div>
+          <div class="route-card-name">Eskişehir Lezzet Rotası</div>
+          <div class="route-card-meta">
+            <div class="route-card-pills"><span class="route-card-pill">⏱ 2.5 sa</span></div>
+            <span class="route-card-star">⭐ 4.6</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- List cards (nearby) -->
+    <div class="section-row" style="margin-top:0">
+      <span class="section-title">📍 Yakınımdakiler</span>
+      <span class="see-all">Haritada Gör →</span>
+    </div>
+    <div style="padding:0 16px;margin-bottom:18px">
+      <div class="list-card" onclick="showScreen('route-detail')">
+          <div class="list-card-photo"><img src="frigya.png" alt="Frigya Rotası" /> 
+              <div class="list-card-info">
+                  <div class="list-card-top">
+                      <div class="list-card-name">Odunpazarı Tarihi Rota</div>
+                      <div class="list-card-price">₺ 49</div>
+                  </div>
+                  <div class="list-card-bottom">
+                      <div class="list-card-tag">🏛️ Kültür</div>
+                      <span class="list-card-meta">⭐ 4.8 · 4.2km · 7 durak</span>
+                  </div>
+              </div>
+          </div>
+      <div class="list-card" onclick="showScreen('route-detail')">
+        <div class="list-card-photo"><div class="grad-bg" style="background:linear-gradient(135deg,#7EC85A,#2A7020)"></div></div>
+        <div class="list-card-info">
+          <div class="list-card-top">
+            <div class="list-card-name">Şelale Parkı &amp; Yürüyüş</div>
+            <div class="list-card-price" style="color:#22C55E">Ücretsiz</div>
+          </div>
+          <div class="list-card-bottom">
+            <div class="list-card-tag" style="background:#ECFDF5;color:#22C55E">🌿 Doğa</div>
+            <span class="list-card-meta">⭐ 4.5 · 3.1km · 5 durak</span>
+          </div>
+        </div>
+      </div>
+      <div class="list-card" onclick="showScreen('route-detail')">
+          <div class="list-card-photo"><img src="frigya.png" alt="Frigya Rotası" />
+              <div class="list-card-info">
+                  <div class="list-card-top">
+                      <div class="list-card-name">Sazova Masal Turu</div>
+                      <div class="list-card-price">₺ 29</div>
+                  </div>
+                  <div class="list-card-bottom">
+                      <div class="list-card-tag" style="background:#FFF8EC;color:#D97706">👨‍👩‍👧 Aile</div>
+                      <span class="list-card-meta">⭐ 4.9 · 2.8km · 6 durak</span>
+                  </div>
+              </div>
+          </div>
+    </div>
+
+    <!-- Trend -->
+    <div class="section-row" style="margin-top:0">
+      <span class="section-title">📈 Bu Hafta Trend</span>
+    </div>
+    <div style="padding:0 16px 24px">
+      <div class="trend-row" onclick="showScreen('route-detail')">
+        <div class="trend-num">1</div>
+        <div class="trend-photo"><img src="frigya.png" alt="Frigya Rotası" />
+            <div>
+                <div class="trend-name">Eskişehir Tarihi Yürüyüş</div>
+                <div class="trend-sub">Eskişehir · ⭐ 4.8</div>
+            </div>
+            <div class="trend-badge">+124</div>
+        </div>
+      <div class="trend-row" onclick="showScreen('route-detail')">
+        <div class="trend-num">2</div>
+        <div class="trend-photo"><div class="grad-bg" style="background:linear-gradient(135deg,#5090C0,#1A4870);border-radius:10px"></div></div>
+        <div>
+          <div class="trend-name">Porsuk Nehir Rotası</div>
+          <div class="trend-sub">Eskişehir · ⭐ 4.7</div>
+        </div>
+        <div class="trend-badge">+98</div>
+      </div>
+      <div class="trend-row" onclick="showScreen('route-detail')">
+        <div class="trend-num">3</div>
+        <div class="trend-photo"><img class="feat-img" src="frigya.png" alt="Frigya Rotası" />
+            <div>
+                <div class="trend-name">Sazova Masal Turu</div>
+                <div class="trend-sub">Eskişehir · ⭐ 4.9</div>
+            </div>
+            <div class="trend-badge">+87</div>
+        </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════ SCREEN: EXPLORE ═══════ -->
+<div class="screen" id="screen-explore">
+  <div class="top-bar">
+    <button class="icon-btn" onclick="showScreen('home')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="top-bar-title">Keşfet</span>
+    <div style="width:36px"></div>
+  </div>
+  <div class="scr-scroll">
+    <div class="explore-search" style="margin:14px 16px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C0BCBA" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" placeholder="Şehir veya rota ara...">
+    </div>
+
+    <div style="padding:0 16px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:#B0A89E;margin-bottom:10px">POPÜLER ARAMALAR</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <span style="background:#fff;border:1.5px solid #EBEBEB;border-radius:20px;padding:6px 13px;font-size:12px;font-weight:500;color:#4A4540;cursor:pointer">Odunpazarı</span>
+        <span style="background:#fff;border:1.5px solid #EBEBEB;border-radius:20px;padding:6px 13px;font-size:12px;font-weight:500;color:#4A4540;cursor:pointer">Gondola Turu</span>
+        <span style="background:#fff;border:1.5px solid #EBEBEB;border-radius:20px;padding:6px 13px;font-size:12px;font-weight:500;color:#4A4540;cursor:pointer">Sazova Park</span>
+        <span style="background:#fff;border:1.5px solid #EBEBEB;border-radius:20px;padding:6px 13px;font-size:12px;font-weight:500;color:#4A4540;cursor:pointer">Porsuk Nehri</span>
+        <span style="background:#fff;border:1.5px solid #EBEBEB;border-radius:20px;padding:6px 13px;font-size:12px;font-weight:500;color:#4A4540;cursor:pointer">Tarihi Evler</span>
+      </div>
+    </div>
+
+    <div class="cat-wrap" style="margin-bottom:14px">
+      <div class="cat-chip active" onclick="selectCat(this)">Tümü</div>
+      <div class="cat-chip inactive" onclick="selectCat(this)">🏛️ Kültür</div>
+      <div class="cat-chip inactive" onclick="selectCat(this)">🌿 Doğa</div>
+      <div class="cat-chip inactive" onclick="selectCat(this)">🍽️ Gastronomi</div>
+      <div class="cat-chip inactive" onclick="selectCat(this)">🌙 Gece</div>
+    </div>
+
+    <div style="padding:0 16px;margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:12px">Tüm Rotalar</div>
+      <div class="list-card" onclick="showScreen('route-detail')">
+          <div class="trend-photo">
+              <img class="feat-img" src="frigya.png" alt="Frigya Rotası" />
+              <div class="list-card-info">
+                  <div class="list-card-top"><div class="list-card-name">Eskişehir Tarihi Yürüyüş</div><div class="list-card-price">₺ 49</div></div>
+                  <div class="list-card-bottom"><div class="list-card-tag">🏛️ Kültür</div><span class="list-card-meta">⭐ 4.8 · 4.2km</span></div>
+              </div>
+          </div>
+      <div class="list-card" onclick="showScreen('route-detail')">
+          <div class="trend-photo">
+              <img class="feat-img" src="frigya.png" alt="Frigya Rotası" />
+              <div class="list-card-info">
+                  <div class="list-card-top"><div class="list-card-name">Kurşunlu Külliyesi Turu</div><div class="list-card-price">₺ 29</div></div>
+                  <div class="list-card-bottom"><div class="list-card-tag">🏛️ Kültür</div><span class="list-card-meta">⭐ 4.9 · 1.8km</span></div>
+              </div>
+          </div>
+      <div class="list-card" onclick="showScreen('route-detail')">
+        <div class="list-card-photo"><div class="grad-bg" style="background:linear-gradient(135deg,#5090C0,#1A4870)"></div></div>
+        <div class="list-card-info">
+          <div class="list-card-top"><div class="list-card-name">Porsuk Nehir Yürüyüşü</div><div class="list-card-price" style="color:#22C55E">Ücretsiz</div></div>
+          <div class="list-card-bottom"><div class="list-card-tag" style="background:#ECFDF5;color:#22C55E">🌿 Doğa</div><span class="list-card-meta">⭐ 4.7 · 3.1km</span></div>
+        </div>
+      </div>
+      <div class="list-card" onclick="showScreen('route-detail')">
+          <div class="trend-photo">
+              <img class="feat-img" src="frigya.png" alt="Frigya Rotası" />
+              <div class="list-card-info">
+                  <div class="list-card-top"><div class="list-card-name">Sazova Masal Turu</div><div class="list-card-price">₺ 29</div></div>
+                  <div class="list-card-bottom"><div class="list-card-tag" style="background:#FFF8EC;color:#D97706">👨‍👩‍👧 Aile</div><span class="list-card-meta">⭐ 4.9 · 2.8km</span></div>
+              </div>
+          </div>
+      <div class="list-card" onclick="showScreen('route-detail')">
+        <div class="list-card-photo"><div class="grad-bg" style="background:linear-gradient(135deg,#C4824A,#6A3820)"></div></div>
+        <div class="list-card-info">
+          <div class="list-card-top"><div class="list-card-name">Eskişehir Lezzet Rotası</div><div class="list-card-price">₺ 39</div></div>
+          <div class="list-card-bottom"><div class="list-card-tag" style="background:#FFF8F5;color:#CC5500">🍽️ Gastronomi</div><span class="list-card-meta">⭐ 4.6 · 2.4km</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ SCREEN: MAP ═══════ -->
+<div class="screen" id="screen-map">
+  <div style="background:#fff;padding:12px 18px 13px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F0F0F0;flex-shrink:0">
+    <span style="font-size:15px;font-weight:700;color:#1A1A1A">Harita</span>
+    <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
+  </div>
+  <div class="map-screen-wrap">
+<svg viewBox="0 0 390 640" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+
+  <!-- ── LAND ── -->
+  <rect width="390" height="640" fill="#EDE8DC"/>
+
+  <!-- ── SAZOVA PARK (top-right) ── -->
+  <path d="M275,0 L390,0 L390,310 Q360,305 330,310 L275,305 Z" fill="#C8DCA8"/>
+  <!-- park paths -->
+  <path d="M275,80 Q310,76 345,78 Q370,80 390,78"  stroke="#BAD096" stroke-width="3" fill="none"/>
+  <path d="M275,150 Q320,146 365,148 Q380,149 390,148" stroke="#BAD096" stroke-width="2.5" fill="none"/>
+  <path d="M310,0 L310,80" stroke="#BAD096" stroke-width="2" fill="none"/>
+  <!-- park tree dots -->
+  <circle cx="290" cy="25"  r="7"   fill="#AECE88" opacity=".65"/>
+  <circle cx="310" cy="15"  r="5.5" fill="#B4D292" opacity=".6"/>
+  <circle cx="330" cy="28"  r="8"   fill="#AECE88" opacity=".65"/>
+  <circle cx="352" cy="14"  r="5"   fill="#B4D292" opacity=".55"/>
+  <circle cx="370" cy="26"  r="7"   fill="#AECE88" opacity=".6"/>
+  <circle cx="282" cy="44"  r="5.5" fill="#B4D292" opacity=".6"/>
+  <circle cx="300" cy="55"  r="7.5" fill="#AECE88" opacity=".65"/>
+  <circle cx="322" cy="46"  r="5.5" fill="#B4D292" opacity=".6"/>
+  <circle cx="345" cy="56"  r="7"   fill="#AECE88" opacity=".65"/>
+  <circle cx="364" cy="44"  r="5"   fill="#B4D292" opacity=".55"/>
+  <circle cx="282" cy="98"  r="6"   fill="#AECE88" opacity=".6"/>
+  <circle cx="305" cy="106" r="8"   fill="#B4D292" opacity=".65"/>
+  <circle cx="328" cy="98"  r="6"   fill="#AECE88" opacity=".6"/>
+  <circle cx="352" cy="108" r="7"   fill="#B4D292" opacity=".65"/>
+  <circle cx="375" cy="96"  r="5"   fill="#AECE88" opacity=".55"/>
+  <circle cx="295" cy="184" r="6"   fill="#AECE88" opacity=".6"/>
+  <circle cx="318" cy="175" r="8"   fill="#B4D292" opacity=".65"/>
+  <circle cx="342" cy="185" r="6"   fill="#AECE88" opacity=".6"/>
+  <circle cx="362" cy="174" r="5"   fill="#B4D292" opacity=".55"/>
+
+  <!-- ── SMALL PARKS (scattered green areas) ── -->
+  <rect x="0"   y="0"   width="55" height="60"  fill="#D0DDB4" rx="2"/>
+  <rect x="160" y="450" width="80" height="70"  fill="#CCDAAA" rx="2"/>
+
+  <!-- ── PORSUK RIVER ── -->
+  <path d="M-5,302 C 40,296 85,305 135,301 C 185,297 230,304 280,300 Q315,297 390,301 L390,320 Q315,317 280,316 C 230,319 185,312 135,316 C 85,320 40,311 -5,317 Z" fill="#9ECADC"/>
+  <!-- shimmer lines -->
+  <path d="M10,306 C 55,302 100,308 150,305 C 200,302 245,307 285,304" stroke="rgba(255,255,255,.4)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M10,313 C 65,310 120,314 170,312 C 220,310 265,314 290,312" stroke="rgba(255,255,255,.22)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- river label -->
+  <text x="130" y="312" font-family="Inter,sans-serif" font-size="9.5" fill="rgba(50,100,140,0.78)" font-style="italic" font-weight="500">Porsuk Çayı</text>
+
+  <!-- ══════════════════════════════════════
+       ROAD CASINGS
+       ══════════════════════════════════════ -->
+
+  <!-- E-W PRIMARY: Atatürk Bulvarı (~y=120) -->
+  <path d="M-5,120 C 60,116 130,118 200,117 C 270,116 330,117 395,116" stroke="#C0BAB0" stroke-width="12" fill="none" stroke-linecap="butt"/>
+  <!-- E-W PRIMARY: İki Eylül Cad. (~y=200) -->
+  <path d="M-5,200 C 60,197 130,199 200,198 C 270,197 330,198 395,197" stroke="#C0BAB0" stroke-width="10" fill="none" stroke-linecap="butt"/>
+  <!-- E-W PRIMARY: 71 Evler / Bağlar (~y=260) -->
+  <path d="M-5,260 C 60,257 130,259 200,258 C 270,257 330,258 395,257" stroke="#C0BAB0" stroke-width="10" fill="none" stroke-linecap="butt"/>
+  <!-- E-W SECONDARY: south of river (~y=330) -->
+  <path d="M-5,330 C 80,327 160,329 230,328 C 290,327 350,328 395,327" stroke="#CAC5BA" stroke-width="8" fill="none" stroke-linecap="butt"/>
+  <!-- E-W SECONDARY: (~y=58) -->
+  <path d="M-5,58 C 80,56 180,57 275,57" stroke="#CAC5BA" stroke-width="7" fill="none" stroke-linecap="butt"/>
+  <!-- E-W MINOR: (~y=400, y=470, y=540) -->
+  <path d="M-5,400 Q 200,398 395,400" stroke="#CAC5BA" stroke-width="6" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,470 Q 200,468 395,470" stroke="#CAC5BA" stroke-width="5.5" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,540 Q 200,538 395,540" stroke="#CAC5BA" stroke-width="5" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,600 Q 200,598 395,600" stroke="#D0CCBF" stroke-width="4" fill="none" stroke-linecap="butt"/>
+
+  <!-- N-S PRIMARY: Şair Yunuş Cad. (~x=60) -->
+  <line x1="60"  y1="0" x2="60"  y2="302" stroke="#C0BAB0" stroke-width="11"/>
+  <line x1="60"  y1="320" x2="60" y2="640" stroke="#C0BAB0" stroke-width="11"/>
+  <!-- N-S PRIMARY: Eski Bağlar Cad. (~x=160) -->
+  <line x1="160" y1="0" x2="160" y2="302" stroke="#C0BAB0" stroke-width="11"/>
+  <line x1="160" y1="320" x2="160" y2="640" stroke="#C0BAB0" stroke-width="11"/>
+  <!-- N-S PRIMARY: Sakarya Cad. (~x=260) -->
+  <line x1="260" y1="0" x2="260" y2="302" stroke="#C0BAB0" stroke-width="10"/>
+  <line x1="260" y1="320" x2="260" y2="640" stroke="#C0BAB0" stroke-width="10"/>
+  <!-- N-S SECONDARY -->
+  <line x1="110" y1="0" x2="110" y2="302" stroke="#CAC5BA" stroke-width="8"/>
+  <line x1="110" y1="320" x2="110" y2="640" stroke="#CAC5BA" stroke-width="8"/>
+  <line x1="210" y1="0" x2="210" y2="302" stroke="#CAC5BA" stroke-width="7"/>
+  <line x1="210" y1="320" x2="210" y2="640" stroke="#CAC5BA" stroke-width="7"/>
+  <line x1="340" y1="300" x2="340" y2="640" stroke="#CAC5BA" stroke-width="7"/>
+
+  <!-- Minor streets (N-S) -->
+  <line x1="35"  y1="58" x2="35"  y2="302" stroke="#D0CCBF" stroke-width="4.5"/>
+  <line x1="85"  y1="58" x2="85"  y2="302" stroke="#D0CCBF" stroke-width="4"/>
+  <line x1="135" y1="58" x2="135" y2="302" stroke="#D0CCBF" stroke-width="4"/>
+  <line x1="185" y1="120" x2="185" y2="302" stroke="#D0CCBF" stroke-width="3.5"/>
+  <line x1="235" y1="120" x2="235" y2="302" stroke="#D0CCBF" stroke-width="3.5"/>
+  <!-- Below river minor -->
+  <line x1="35"  y1="320" x2="35"  y2="640" stroke="#D0CCBF" stroke-width="4"/>
+  <line x1="85"  y1="320" x2="85"  y2="640" stroke="#D0CCBF" stroke-width="3.5"/>
+  <line x1="135" y1="320" x2="135" y2="640" stroke="#D0CCBF" stroke-width="3.5"/>
+  <line x1="185" y1="320" x2="185" y2="640" stroke="#D0CCBF" stroke-width="3.5"/>
+  <line x1="235" y1="320" x2="235" y2="640" stroke="#D0CCBF" stroke-width="3.5"/>
+  <line x1="310" y1="320" x2="310" y2="640" stroke="#D0CCBF" stroke-width="3.5"/>
+
+  <!-- Minor horizontal -->
+  <path d="M-5,88 Q 110,86 275,88"  stroke="#D0CCBF" stroke-width="4" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,160 Q 200,158 395,160" stroke="#D0CCBF" stroke-width="3.5" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,230 Q 200,228 395,230" stroke="#D0CCBF" stroke-width="3.5" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,365 Q 200,363 395,365" stroke="#D0CCBF" stroke-width="3" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,435 Q 200,433 395,435" stroke="#D0CCBF" stroke-width="3" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,505 Q 200,503 395,505" stroke="#D0CCBF" stroke-width="3" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,575 Q 200,573 395,575" stroke="#D0CCBF" stroke-width="3" fill="none" stroke-linecap="butt"/>
+
+  <!-- Odunpazarı area: dense minor streets -->
+  <line x1="0" y1="140" x2="60" y2="140" stroke="#D4D0C5" stroke-width="3"/>
+  <line x1="0" y1="175" x2="60" y2="175" stroke="#D4D0C5" stroke-width="3"/>
+  <line x1="0" y1="220" x2="60" y2="220" stroke="#D4D0C5" stroke-width="2.5"/>
+  <line x1="0" y1="245" x2="60" y2="245" stroke="#D4D0C5" stroke-width="2.5"/>
+  <line x1="0" y1="275" x2="60" y2="275" stroke="#D4D0C5" stroke-width="2.5"/>
+  <line x1="20" y1="120" x2="20" y2="302" stroke="#D4D0C5" stroke-width="2.5"/>
+  <line x1="40" y1="120" x2="40" y2="302" stroke="#D4D0C5" stroke-width="2"/>
+  <!-- Odunpazarı diagonals (historic texture) -->
+  <path d="M5,130 Q18,145 30,155"   stroke="#D8D4C8" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M5,155 Q22,168 38,177"   stroke="#D8D4C8" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M5,175 Q20,190 35,200"   stroke="#D8D4C8" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M10,220 Q25,233 40,244"  stroke="#D8D4C8" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- ══════════════════════════════════════
+       ROAD FILLS
+       ══════════════════════════════════════ -->
+  <!-- E-W fills -->
+  <path d="M-5,120 C 60,116 130,118 200,117 C 270,116 330,117 395,116" stroke="#FFFDFA" stroke-width="9" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,200 C 60,197 130,199 200,198 C 270,197 330,198 395,197" stroke="#FFFDFA" stroke-width="7" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,260 C 60,257 130,259 200,258 C 270,257 330,258 395,257" stroke="#FFFDFA" stroke-width="7" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,330 C 80,327 160,329 230,328 C 290,327 350,328 395,327" stroke="#FFFDFA" stroke-width="5.5" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,58 C 80,56 180,57 275,57" stroke="#FAF7F1" stroke-width="4.5" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,400 Q 200,398 395,400" stroke="#FAF7F1" stroke-width="4" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,470 Q 200,468 395,470" stroke="#FAF7F1" stroke-width="3.8" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,540 Q 200,538 395,540" stroke="#FAF7F1" stroke-width="3.5" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,600 Q 200,598 395,600" stroke="#FAF7F1" stroke-width="2.5" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,88 Q 110,86 275,88" stroke="#FAF7F1" stroke-width="2.8" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,160 Q 200,158 395,160" stroke="#FAF7F1" stroke-width="2.5" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,230 Q 200,228 395,230" stroke="#FAF7F1" stroke-width="2.5" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,365 Q 200,363 395,365" stroke="#FAF7F1" stroke-width="2" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,435 Q 200,433 395,435" stroke="#FAF7F1" stroke-width="2" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,505 Q 200,503 395,505" stroke="#FAF7F1" stroke-width="2" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,575 Q 200,573 395,575" stroke="#FAF7F1" stroke-width="2" fill="none" stroke-linecap="butt"/>
+
+  <!-- N-S fills -->
+  <line x1="60"  y1="0"   x2="60"  y2="302" stroke="#FFFDFA" stroke-width="8"/>
+  <line x1="60"  y1="320" x2="60"  y2="640" stroke="#FFFDFA" stroke-width="8"/>
+  <line x1="160" y1="0"   x2="160" y2="302" stroke="#FFFDFA" stroke-width="8"/>
+  <line x1="160" y1="320" x2="160" y2="640" stroke="#FFFDFA" stroke-width="8"/>
+  <line x1="260" y1="0"   x2="260" y2="302" stroke="#FFFDFA" stroke-width="7.5"/>
+  <line x1="260" y1="320" x2="260" y2="640" stroke="#FFFDFA" stroke-width="7.5"/>
+  <line x1="110" y1="0"   x2="110" y2="302" stroke="#FAF7F1" stroke-width="5.5"/>
+  <line x1="110" y1="320" x2="110" y2="640" stroke="#FAF7F1" stroke-width="5.5"/>
+  <line x1="210" y1="0"   x2="210" y2="302" stroke="#FAF7F1" stroke-width="5"/>
+  <line x1="210" y1="320" x2="210" y2="640" stroke="#FAF7F1" stroke-width="5"/>
+  <line x1="340" y1="300" x2="340" y2="640" stroke="#FAF7F1" stroke-width="5"/>
+  <line x1="35"  y1="58"  x2="35"  y2="302" stroke="#FAF7F1" stroke-width="3"/>
+  <line x1="85"  y1="58"  x2="85"  y2="302" stroke="#FAF7F1" stroke-width="2.8"/>
+  <line x1="135" y1="58"  x2="135" y2="302" stroke="#FAF7F1" stroke-width="2.8"/>
+  <line x1="185" y1="120" x2="185" y2="302" stroke="#FAF7F1" stroke-width="2.5"/>
+  <line x1="235" y1="120" x2="235" y2="302" stroke="#FAF7F1" stroke-width="2.5"/>
+  <line x1="35"  y1="320" x2="35"  y2="640" stroke="#FAF7F1" stroke-width="2.8"/>
+  <line x1="85"  y1="320" x2="85"  y2="640" stroke="#FAF7F1" stroke-width="2.5"/>
+  <line x1="135" y1="320" x2="135" y2="640" stroke="#FAF7F1" stroke-width="2.5"/>
+  <line x1="185" y1="320" x2="185" y2="640" stroke="#FAF7F1" stroke-width="2.5"/>
+  <line x1="235" y1="320" x2="235" y2="640" stroke="#FAF7F1" stroke-width="2.5"/>
+  <line x1="310" y1="320" x2="310" y2="640" stroke="#FAF7F1" stroke-width="2.5"/>
+
+  <!-- ── ROAD LABELS ── -->
+  <text x="65"  y="114" font-family="Inter,sans-serif" font-size="8" fill="#8A8580" font-weight="600">Atatürk Bulvarı</text>
+  <text x="65"  y="194" font-family="Inter,sans-serif" font-size="7.5" fill="#8A8580" font-weight="600">İki Eylül Cad.</text>
+  <text x="65"  y="254" font-family="Inter,sans-serif" font-size="7.5" fill="#8A8580" font-weight="600">Sakarya Cad.</text>
+  <text x="4"   y="114" font-family="Inter,sans-serif" font-size="7" fill="#9A9590" font-weight="500" transform="rotate(-90 4 120)">Şair Yunuş</text>
+  <text x="112" y="80"  font-family="Inter,sans-serif" font-size="6.5" fill="#9A9590" font-weight="500">Hastane Cad.</text>
+  <text x="14"  y="55"  font-family="Inter,sans-serif" font-size="7.5" fill="#7A9A60" font-weight="500">Sazova Parkı</text>
+  <text x="162" y="460" font-family="Inter,sans-serif" font-size="7.5" fill="#7A9A60" font-weight="500">Şelale Parkı</text>
+
+  <!-- ── ROUTE PINS ── -->
+  <!-- Pin 1: Odunpazarı (left side) -->
+  <circle cx="88" cy="188" r="28" fill="rgba(255,87,34,.12)"/>
+  <circle cx="88" cy="188" r="18" fill="#FF5722" filter="drop-shadow(0 2px 6px rgba(255,87,34,.45))"/>
+  <circle cx="88" cy="188" r="18" fill="none" stroke="#fff" stroke-width="3"/>
+  <text x="88" y="192.5" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="white" font-weight="700">1</text>
+
+  <!-- Pin 2: central -->
+  <circle cx="210" cy="248" r="15" fill="#FF5722" filter="drop-shadow(0 2px 5px rgba(255,87,34,.4))"/>
+  <circle cx="210" cy="248" r="15" fill="none" stroke="#fff" stroke-width="2.5"/>
+  <text x="210" y="252.5" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" fill="white" font-weight="700">2</text>
+
+  <!-- Pin 3: Sazova -->
+  <circle cx="330" cy="180" r="22" fill="rgba(34,197,94,.14)"/>
+  <circle cx="330" cy="180" r="16" fill="#22C55E" filter="drop-shadow(0 2px 5px rgba(34,197,94,.4))"/>
+  <circle cx="330" cy="180" r="16" fill="none" stroke="#fff" stroke-width="3"/>
+  <text x="330" y="184.5" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="white" font-weight="700">3</text>
+
+  <!-- Pin 4: south -->
+  <circle cx="160" cy="440" r="14" fill="#FF5722" filter="drop-shadow(0 2px 4px rgba(255,87,34,.4))"/>
+  <circle cx="160" cy="440" r="14" fill="none" stroke="#fff" stroke-width="2"/>
+  <text x="160" y="444.5" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="white" font-weight="700">4</text>
+
+  <!-- User location -->
+  <circle cx="185" cy="350" r="18" fill="rgba(59,130,246,.18)"/>
+  <circle cx="185" cy="350" r="9"  fill="#3B82F6" filter="drop-shadow(0 2px 4px rgba(59,130,246,.5))"/>
+  <circle cx="185" cy="350" r="9"  fill="none" stroke="#fff" stroke-width="2.5"/>
+
+  <!-- compass -->
+  <g transform="translate(362,28)">
+    <circle cx="0" cy="0" r="16" fill="rgba(255,255,255,0.94)"/>
+    <text x="0" y="5" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#444" font-weight="700">N</text>
+    <path d="M0,-16 L3,-6 L0,-9 L-3,-6 Z" fill="#FF5722"/>
+    <path d="M0,16 L3,6 L0,9 L-3,6 Z" fill="#C8C3B8"/>
+  </g>
+</svg>
+
+    <!-- Floating card -->
+    <div class="map-floating-card" onclick="showScreen('route-detail')">
+        <div class="mfc-photo"><img src="frigya.png" alt="Frigya Rotası" /></div>
+      <div>
+        <div class="mfc-title">Eskişehir Tarihi Yürüyüş</div>
+        <div class="mfc-sub">⭐ 4.8 · 4.2 km · 7 durak · ₺49</div>
+      </div>
+      <div class="mfc-arrow">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+    <div class="map-fab">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ SCREEN: PROFILE ═══════ -->
+<div class="screen" id="screen-profile">
+  <div class="scr-scroll">
+    <!-- Profile Hero -->
+    <div class="profile-hero">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+        <button class="icon-btn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+      <div class="profile-top">
+        <div class="profile-ava">SR</div>
+        <div>
+          <div class="profile-name">Serhat Rençper</div>
+          <div class="profile-handle">@serhatrenc · Eskişehir</div>
+        </div>
+        <button class="profile-edit-btn">Düzenle</button>
+      </div>
+      <div class="profile-stats">
+        <div class="pstat"><div class="pstat-val">12</div><div class="pstat-label">Rota Gezildi</div></div>
+        <div class="pstat"><div class="pstat-val">3</div><div class="pstat-label">Oluşturulan</div></div>
+        <div class="pstat"><div class="pstat-val">⭐ 4.8</div><div class="pstat-label">Ortalama</div></div>
+        <div class="pstat"><div class="pstat-val">48◆</div><div class="pstat-label">Kredi</div></div>
+      </div>
+    </div>
+
+    <!-- XP Bar -->
+    <div style="background:#fff;padding:12px 18px;border-bottom:1px solid #F0F0F0">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:600;color:#1A1A1A">🌟 Gezgin · Seviye 3</span>
+        <span style="font-size:11px;color:#B0A89E">3.650 / 5.000 XP</span>
+      </div>
+      <div style="background:#F0EBE5;border-radius:10px;height:6px;overflow:hidden">
+        <div style="background:linear-gradient(90deg,#FF5722,#FF8A50);height:100%;width:73%;border-radius:10px"></div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="profile-tabs">
+      <div class="p-tab active" onclick="switchTab(this,'tab-rotalar')">Rotalarım</div>
+      <div class="p-tab" onclick="switchTab(this,'tab-rozetler')">Rozetler</div>
+      <div class="p-tab" onclick="switchTab(this,'tab-favoriler')">Favoriler</div>
+    </div>
+
+    <!-- Tab: Rotalar -->
+    <div id="tab-rotalar" style="padding:14px 16px 24px">
+        <div class="list-card" onclick="showScreen('route-detail')">
+            <div class="list-card-photo"><img src="frigya.png" alt="Frigya Rotası" /></div>
+        <div class="list-card-info">
+          <div class="list-card-top"><div class="list-card-name">Kurşunlu Külliyesi Turu</div><div class="list-card-price">₺ 29</div></div>
+          <div class="list-card-bottom"><div class="list-card-tag">🏛️ Kültür</div><span class="list-card-meta">⭐ 4.9 · 5 durak</span></div>
+        </div>
+      </div>
+      <div class="list-card" onclick="showScreen('route-detail')">
+          <div class="list-card-photo"><img src="frigya.png" alt="Frigya Rotası" /></div>
+        <div class="list-card-info">
+          <div class="list-card-top"><div class="list-card-name">Odunpazarı Tarihi Rota</div><div class="list-card-price">₺ 49</div></div>
+          <div class="list-card-bottom"><div class="list-card-tag">🏛️ Kültür</div><span class="list-card-meta">⭐ 4.8 · 7 durak</span></div>
+        </div>
+      </div>
+      <div class="list-card" onclick="showScreen('route-detail')">
+          <div class="list-card-photo"><img src="frigya.png" alt="Frigya Rotası" /></div>
+        <div class="list-card-info">
+          <div class="list-card-top"><div class="list-card-name">Sazova Masal Turu</div><div class="list-card-price">₺ 29</div></div>
+          <div class="list-card-bottom"><div class="list-card-tag" style="background:#FFF8EC;color:#D97706">👨‍👩‍👧 Aile</div><span class="list-card-meta">⭐ 4.9 · 6 durak</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Rozetler (hidden by default) -->
+    <div id="tab-rozetler" style="display:none">
+      <div class="badge-grid">
+        <div class="badge-item"><div class="badge-icon">🎯</div><div class="badge-name">İlk Adım</div><div class="badge-desc">İlk rota gezildi</div></div>
+        <div class="badge-item"><div class="badge-icon">🗺️</div><div class="badge-name">Kaşif</div><div class="badge-desc">5 rota tamamlandı</div></div>
+        <div class="badge-item"><div class="badge-icon">⭐</div><div class="badge-name">Eleştirmen</div><div class="badge-desc">10 yorum yapıldı</div></div>
+        <div class="badge-item"><div class="badge-icon">✏️</div><div class="badge-name">Creator</div><div class="badge-desc">İlk rota oluşturuldu</div></div>
+        <div class="badge-item locked"><div class="badge-icon">🏛️</div><div class="badge-name">Tarihçi</div><div class="badge-desc">10 kültür rotası</div></div>
+        <div class="badge-item locked"><div class="badge-icon">👑</div><div class="badge-name">Efsane</div><div class="badge-desc">50 rota gezildi</div></div>
+      </div>
+    </div>
+
+    <!-- Tab: Favoriler (hidden by default) -->
+    <div id="tab-favoriler" style="display:none;padding:14px 16px 24px">
+      <div class="list-card" onclick="showScreen('route-detail')">
+          <div class="list-card-photo"><img src="frigya.png" alt="Frigya Rotası" /></div>
+        <div class="list-card-info">
+          <div class="list-card-top"><div class="list-card-name">Eskişehir Tarihi Yürüyüş</div><div class="list-card-price">₺ 49</div></div>
+          <div class="list-card-bottom"><div class="list-card-tag">🏛️ Kültür</div><span class="list-card-meta">⭐ 4.8 · 7 durak</span></div>
+        </div>
+      </div>
+      <div class="list-card" onclick="showScreen('route-detail')">
+          <div class="list-card-photo"><img src="frigya.png" alt="Frigya Rotası" /></div>
+        <div class="list-card-info">
+          <div class="list-card-top"><div class="list-card-name">Sazova Masal Turu</div><div class="list-card-price">₺ 29</div></div>
+          <div class="list-card-bottom"><div class="list-card-tag" style="background:#FFF8EC;color:#D97706">👨‍👩‍👧 Aile</div><span class="list-card-meta">⭐ 4.9 · 6 durak</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════ SCREEN: ROUTE DETAIL ═══════ -->
+<div class="screen" id="screen-route-detail" style="background:#F5F5F7">
+
+  <!-- Hero (no top-bar, back button overlaid) -->
+  <div class="rd-hero" style="flex-shrink:0">
+      <img src="frigya.png" alt="Frigya Rotası" />    
+      <div class="rd-hero-grad"></div>
+    <div class="rd-hero-back" onclick="goBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </div>
+    <div class="rd-hero-save">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <div class="rd-hero-content">
+      <div class="rd-hero-tag">🏛️ Kültür &amp; Tarih</div>
+      <div class="rd-hero-title">Eskişehir Tarihi<br>Yürüyüş Rotası</div>
+      <div class="rd-hero-pills">
+        <span class="rd-hero-pill">🚶 4.2 km</span>
+        <span class="rd-hero-pill">⏱ ~2 saat</span>
+        <span class="rd-hero-pill">📍 7 durak</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scr-scroll">
+    <!-- Creator row -->
+    <div class="creator-row">
+      <div class="creator-left">
+        <div class="creator-ava">AT</div>
+        <div>
+          <div class="creator-name">Ahmet Taşkın</div>
+          <div class="creator-sub">Rota Yaratıcısı · ⭐ 4.8 · 127 gezildi</div>
+        </div>
+      </div>
+      <button class="price-btn">₺ 49</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val">4.2</div><div class="stat-label">Kilometre</div></div>
+      <div class="stat-box"><div class="stat-val">~2 sa</div><div class="stat-label">Süre</div></div>
+      <div class="stat-box"><div class="stat-val">7</div><div class="stat-label">Durak</div></div>
+      <div class="stat-box"><div class="stat-val">⭐ 4.8</div><div class="stat-label">Puan</div></div>
+    </div>
+
+    <!-- Map -->
+    <div class="rd-section-hd"><h3>Rota Haritası</h3></div>
+    <div class="map-outer">
+      <div class="map-card">
+<svg viewBox="0 0 358 220" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="cm1"><circle cx="32" cy="175" r="13"/></clipPath>
+    <clipPath id="cm2"><circle cx="88" cy="135" r="11"/></clipPath>
+    <clipPath id="cm7"><circle cx="318" cy="170" r="13"/></clipPath>
+    <filter id="msm"><feDropShadow dx="0" dy="1.5" stdDeviation="2.5" flood-opacity="0.22"/></filter>
+  </defs>
+
+  <!-- ── LAND ── -->
+  <rect width="358" height="220" fill="#EDE8DC"/>
+
+  <!-- ── SAZOVA PARK ── -->
+  <path d="M265,0 L358,0 L358,220 L265,162 L265,0" fill="#C8DCA8"/>
+  <!-- park internal path lines -->
+  <path d="M265,60 Q295,62 320,58 Q342,55 358,57" stroke="#BACC98" stroke-width="2.5" fill="none"/>
+  <path d="M265,110 Q300,107 340,108" stroke="#BACC98" stroke-width="2" fill="none"/>
+  <!-- park tree dots -->
+  <circle cx="284" cy="18" r="5.5" fill="#AECE88" opacity=".65"/>
+  <circle cx="302" cy="10" r="4"   fill="#B4D292" opacity=".6"/>
+  <circle cx="320" cy="20" r="6.5" fill="#AECE88" opacity=".65"/>
+  <circle cx="340" cy="10" r="4"   fill="#B4D292" opacity=".55"/>
+  <circle cx="278" cy="35" r="4"   fill="#AECE88" opacity=".6"/>
+  <circle cx="297" cy="44" r="6"   fill="#B4D292" opacity=".65"/>
+  <circle cx="316" cy="36" r="4.5" fill="#AECE88" opacity=".6"/>
+  <circle cx="338" cy="42" r="5.5" fill="#B4D292" opacity=".65"/>
+  <circle cx="352" cy="28" r="4"   fill="#AECE88" opacity=".55"/>
+  <circle cx="284" cy="80" r="5"   fill="#AECE88" opacity=".6"/>
+  <circle cx="310" cy="74" r="6"   fill="#B4D292" opacity=".65"/>
+  <circle cx="334" cy="82" r="5"   fill="#AECE88" opacity=".6"/>
+  <circle cx="350" cy="70" r="4"   fill="#B4D292" opacity=".55"/>
+
+  <!-- ── RIVER ── -->
+  <path d="M-5,148 C 35,143 75,150 120,147 C 165,144 210,150 255,147 L265,147 L265,162 C 210,163 165,157 120,160 C 75,163 35,157 -5,162 Z" fill="#9ECADC"/>
+  <!-- river shimmer -->
+  <path d="M5,151 C 45,147 85,153 130,150 C 175,147 215,152 258,149" stroke="rgba(255,255,255,.38)" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M5,156 C 55,153 105,157 155,155 C 200,153 240,156 258,154" stroke="rgba(255,255,255,.2)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+
+  <!-- ══════════════════════════════════════
+       ROAD CASINGS  (drawn first = behind fills)
+       ══════════════════════════════════════ -->
+
+  <!-- E-W: Atatürk Bulvarı (primary) -->
+  <path d="M-5,71 C 50,67 110,69 175,68 C 240,67 300,68 363,67" stroke="#C0BAB0" stroke-width="10" fill="none" stroke-linecap="butt"/>
+  <!-- E-W: İki Eylül Cad. (primary) -->
+  <path d="M-5,105 C 50,102 110,104 175,103 C 240,102 300,103 363,102" stroke="#C0BAB0" stroke-width="8" fill="none" stroke-linecap="butt"/>
+  <!-- E-W: top secondary -->
+  <path d="M-5,40 C 80,38 180,39 363,39" stroke="#CAC5BA" stroke-width="6" fill="none" stroke-linecap="butt"/>
+  <!-- E-W: south of river (secondary) -->
+  <path d="M-5,170 C 80,168 180,169 265,168" stroke="#CAC5BA" stroke-width="5.5" fill="none" stroke-linecap="butt"/>
+  <!-- E-W: far south minor -->
+  <path d="M-5,198 Q 130,196 265,197" stroke="#D0CCBF" stroke-width="4" fill="none" stroke-linecap="butt"/>
+
+  <!-- N-S: major (x=88, x=222) -->
+  <line x1="88"  y1="0" x2="88"  y2="148" stroke="#C0BAB0" stroke-width="9"/>
+  <line x1="222" y1="0" x2="222" y2="148" stroke="#C0BAB0" stroke-width="9"/>
+  <!-- N-S: secondary (x=46, x=135, x=175, x=265) -->
+  <line x1="46"  y1="0" x2="46"  y2="148" stroke="#CAC5BA" stroke-width="7"/>
+  <line x1="135" y1="0" x2="135" y2="148" stroke="#CAC5BA" stroke-width="6.5"/>
+  <line x1="175" y1="0" x2="175" y2="148" stroke="#CAC5BA" stroke-width="6.5"/>
+  <line x1="265" y1="0" x2="265" y2="148" stroke="#CAC5BA" stroke-width="6"/>
+
+  <!-- Below river -->
+  <line x1="46"  y1="162" x2="46"  y2="220" stroke="#CAC5BA" stroke-width="6"/>
+  <line x1="88"  y1="162" x2="88"  y2="220" stroke="#C0BAB0" stroke-width="8"/>
+  <line x1="135" y1="162" x2="135" y2="220" stroke="#CAC5BA" stroke-width="5.5"/>
+  <line x1="175" y1="162" x2="175" y2="220" stroke="#CAC5BA" stroke-width="5.5"/>
+  <line x1="222" y1="162" x2="222" y2="220" stroke="#C0BAB0" stroke-width="8"/>
+
+  <!-- Minor streets (Odunpazarı dense area, x<90) -->
+  <line x1="0"  y1="55" x2="88"  y2="55"  stroke="#D0CCBF" stroke-width="3"/>
+  <line x1="0"  y1="84" x2="46"  y2="84"  stroke="#D0CCBF" stroke-width="2.5"/>
+  <line x1="0"  y1="95" x2="88"  y2="95"  stroke="#D0CCBF" stroke-width="2.5"/>
+  <line x1="0"  y1="118" x2="46" y2="118" stroke="#D0CCBF" stroke-width="2.5"/>
+  <line x1="0"  y1="130" x2="88" y2="130" stroke="#D0CCBF" stroke-width="2.5"/>
+  <line x1="22" y1="71" x2="22"  y2="148" stroke="#D0CCBF" stroke-width="2.5"/>
+  <!-- Odunpazarı diagonal streets (historic texture) -->
+  <path d="M8,80 Q18,88 28,95"  stroke="#D4D0C5" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M8,95 Q20,103 30,110" stroke="#D4D0C5" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Central minor streets -->
+  <line x1="88"  y1="55"  x2="175" y2="55"  stroke="#D0CCBF" stroke-width="2.5"/>
+  <line x1="110" y1="71"  x2="110" y2="105" stroke="#D0CCBF" stroke-width="2"/>
+  <line x1="155" y1="71"  x2="155" y2="105" stroke="#D0CCBF" stroke-width="2"/>
+  <line x1="175" y1="55"  x2="265" y2="55"  stroke="#D0CCBF" stroke-width="2.5"/>
+  <line x1="196" y1="71"  x2="196" y2="105" stroke="#D0CCBF" stroke-width="2"/>
+  <line x1="244" y1="71"  x2="244" y2="105" stroke="#D0CCBF" stroke-width="2"/>
+  <line x1="135" y1="120" x2="175" y2="120" stroke="#D0CCBF" stroke-width="2"/>
+
+  <!-- ══════════════════════════════════════
+       ROAD FILLS  (drawn on top of casings)
+       ══════════════════════════════════════ -->
+
+  <!-- E-W fills -->
+  <path d="M-5,71 C 50,67 110,69 175,68 C 240,67 300,68 363,67" stroke="#FFFDFA" stroke-width="7" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,105 C 50,102 110,104 175,103 C 240,102 300,103 363,102" stroke="#FFFDFA" stroke-width="5.5" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,40 C 80,38 180,39 363,39" stroke="#FAF7F1" stroke-width="3.8" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,170 C 80,168 180,169 265,168" stroke="#FAF7F1" stroke-width="3.5" fill="none" stroke-linecap="butt"/>
+  <path d="M-5,198 Q 130,196 265,197" stroke="#FAF7F1" stroke-width="2.5" fill="none" stroke-linecap="butt"/>
+
+  <!-- N-S fills -->
+  <line x1="88"  y1="0" x2="88"  y2="148" stroke="#FFFDFA" stroke-width="6.5"/>
+  <line x1="222" y1="0" x2="222" y2="148" stroke="#FFFDFA" stroke-width="6.5"/>
+  <line x1="46"  y1="0" x2="46"  y2="148" stroke="#FAF7F1" stroke-width="4.5"/>
+  <line x1="135" y1="0" x2="135" y2="148" stroke="#FAF7F1" stroke-width="4.2"/>
+  <line x1="175" y1="0" x2="175" y2="148" stroke="#FAF7F1" stroke-width="4.2"/>
+  <line x1="265" y1="0" x2="265" y2="148" stroke="#FAF7F1" stroke-width="3.8"/>
+  <!-- Below river fills -->
+  <line x1="46"  y1="162" x2="46"  y2="220" stroke="#FAF7F1" stroke-width="4"/>
+  <line x1="88"  y1="162" x2="88"  y2="220" stroke="#FFFDFA" stroke-width="5.5"/>
+  <line x1="135" y1="162" x2="135" y2="220" stroke="#FAF7F1" stroke-width="3.8"/>
+  <line x1="175" y1="162" x2="175" y2="220" stroke="#FAF7F1" stroke-width="3.8"/>
+  <line x1="222" y1="162" x2="222" y2="220" stroke="#FFFDFA" stroke-width="5.5"/>
+
+  <!-- ── ROAD LABELS ── -->
+  <text x="10" y="65"  font-family="Inter,sans-serif" font-size="5.5" fill="#8A8580" font-weight="600">Atatürk Bulvarı</text>
+  <text x="10" y="99"  font-family="Inter,sans-serif" font-size="5.5" fill="#8A8580" font-weight="600">İki Eylül Cad.</text>
+  <text x="88" y="155" font-family="Inter,sans-serif" font-size="6.5" fill="rgba(50,100,140,0.75)" font-style="italic" font-weight="500">Porsuk Çayı</text>
+  <text x="276" y="56" font-family="Inter,sans-serif" font-size="6" fill="#7A9A60" font-weight="500">Sazova Parkı</text>
+
+  <!-- ── ROUTE GLOW ── -->
+  <path d="M32,175 C48,158 68,138 88,135 C106,132 118,126 135,122 C152,118 162,128 178,124 C195,120 208,98 225,96 C242,94 258,110 275,112 C292,114 306,144 318,170"
+        stroke="rgba(255,87,34,0.22)" stroke-width="13" fill="none" stroke-linecap="round"/>
+
+  <!-- ── ROUTE LINE ── -->
+  <path class="route-line"
+        d="M32,175 C48,158 68,138 88,135 C106,132 118,126 135,122 C152,118 162,128 178,124 C195,120 208,98 225,96 C242,94 258,110 275,112 C292,114 306,144 318,170"
+        stroke="#FF5722" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- direction dashes -->
+  <path d="M32,175 C48,158 68,138 88,135 C106,132 118,126 135,122 C152,118 162,128 178,124 C195,120 208,98 225,96 C242,94 258,110 275,112 C292,114 306,144 318,170"
+        stroke="rgba(255,255,255,.5)" stroke-width="1.2" fill="none" stroke-dasharray="4 9" stroke-linecap="round"/>
+
+  <!-- ── MARKERS ── -->
+  <!-- 1: START -->
+  <g class="mk mk1">
+    <circle class="pulse2" cx="32" cy="175" r="12" fill="none" stroke="#FF5722" stroke-width="2.5" opacity=".55"/>
+    <circle cx="32" cy="175" r="15" fill="#1A1A1A" filter="url(#msm)"/>
+    <img src="frigya.png" alt="Frigya Rotası" />
+    <circle cx="32" cy="175" r="15" fill="none" stroke="#fff" stroke-width="2.5"/>
+  </g>
+  <!-- 2: OPEN -->
+  <g class="mk mk2">
+    <circle cx="88" cy="135" r="13" fill="#FF5722" filter="url(#msm)"/>
+    <img src="frigya.png" alt="Frigya Rotası" />
+    <circle cx="88" cy="135" r="13" fill="none" stroke="#fff" stroke-width="2.5"/>
+  </g>
+  <!-- 3: LOCKED -->
+  <g class="mk mk3">
+    <circle cx="135" cy="122" r="11" fill="#BDB5AB" filter="url(#msm)"/>
+    <circle cx="135" cy="122" r="11" fill="none" stroke="#fff" stroke-width="2"/>
+    <rect x="130.5" y="123" width="9" height="7" rx="1.3" fill="none" stroke="white" stroke-width="1.4"/>
+    <path d="M132.5,123 v-2.5 a2.5,2.5 0 0,1 5,0 v2.5" fill="none" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+  </g>
+  <!-- 4: LOCKED -->
+  <g class="mk mk4">
+    <circle cx="178" cy="124" r="11" fill="#BDB5AB" filter="url(#msm)"/>
+    <circle cx="178" cy="124" r="11" fill="none" stroke="#fff" stroke-width="2"/>
+    <rect x="173.5" y="125" width="9" height="7" rx="1.3" fill="none" stroke="white" stroke-width="1.4"/>
+    <path d="M175.5,125 v-2.5 a2.5,2.5 0 0,1 5,0 v2.5" fill="none" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+  </g>
+  <!-- 5: LOCKED -->
+  <g class="mk mk5">
+    <circle cx="225" cy="96" r="11" fill="#BDB5AB" filter="url(#msm)"/>
+    <circle cx="225" cy="96" r="11" fill="none" stroke="#fff" stroke-width="2"/>
+    <rect x="220.5" y="97" width="9" height="7" rx="1.3" fill="none" stroke="white" stroke-width="1.4"/>
+    <path d="M222.5,97 v-2.5 a2.5,2.5 0 0,1 5,0 v2.5" fill="none" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+  </g>
+  <!-- 6: LOCKED -->
+  <g class="mk mk6">
+    <circle cx="275" cy="112" r="11" fill="#BDB5AB" filter="url(#msm)"/>
+    <circle cx="275" cy="112" r="11" fill="none" stroke="#fff" stroke-width="2"/>
+    <rect x="270.5" y="113" width="9" height="7" rx="1.3" fill="none" stroke="white" stroke-width="1.4"/>
+    <path d="M272.5,113 v-2.5 a2.5,2.5 0 0,1 5,0 v2.5" fill="none" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+  </g>
+  <!-- 7: FINISH -->
+  <g class="mk mk7">
+    <circle cx="318" cy="170" r="15" fill="#22C55E" filter="url(#msm)"/>
+    <img src="frigya.png" alt="Frigya Rotası" />
+    <circle cx="318" cy="170" r="15" fill="none" stroke="#fff" stroke-width="2.5"/>
+  </g>
+
+  <!-- ── STOP LABELS ── -->
+  <rect x="1" y="188" width="60" height="13" fill="rgba(10,6,3,0.6)" rx="4"/>
+  <text x="5" y="197.5" font-family="Inter,sans-serif" font-size="7" fill="white" font-weight="500">Odunpazarı</text>
+  <rect x="260" y="188" width="66" height="13" fill="rgba(10,6,3,0.6)" rx="4"/>
+  <text x="264" y="197.5" font-family="Inter,sans-serif" font-size="7" fill="white" font-weight="500">Sazova Parkı</text>
+
+  <!-- distance badge -->
+  <rect x="152" y="74" width="50" height="15" fill="#FF5722" rx="7.5"/>
+  <text x="177" y="85.5" text-anchor="middle" font-family="Inter,sans-serif" font-size="8" fill="white" font-weight="600">4.2 km</text>
+
+  <!-- compass -->
+  <g transform="translate(340,10)">
+    <circle cx="0" cy="0" r="12" fill="rgba(255,255,255,0.92)"/>
+    <text x="0" y="4.5" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#444" font-weight="700">N</text>
+    <path d="M0,-12 L2.5,-5 L0,-7.5 L-2.5,-5 Z" fill="#FF5722"/>
+    <path d="M0,12 L2.5,5 L0,7.5 L-2.5,5 Z" fill="#C8C3B8"/>
+  </g>
+</svg>
+</div>
+    </div>
+
+    <!-- Stops -->
+    <div class="rd-section-hd">
+      <h3>Duraklar</h3>
+      <div class="lock-badge">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        4 kilitli
+      </div>
+    </div>
+    <div class="stops-wrap2">
+        <div class="stop-row">
+            <div class="stop-left"><div class="snum start"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="10" r="3" /><path d="M12 21s-7-7-7-11a7 7 0 1 1 14 0c0 4-7 11-7 11z" /></svg></div><div class="sline"></div></div>
+            <div class="stop-card"><div class="stop-photo2"><img src="frigya.png" alt="Frigya Rotası" /></div></div>
+        <div class="stop-info"><div class="stop-name">Odunpazarı Meydanı</div><div class="stop-desc">Eskişehir'in tarihi kalbi. Osmanlı dönemi renkli konakları ve taş sokaklarıyla başlangıç noktası.</div></div></div>
+      </div>
+      <div class="stop-row">
+        <div class="stop-left"><div class="snum open">2</div><div class="sline"></div></div>
+        <div class="stop-card"><div class="stop-photo2"><img src="frigya.png" alt="Frigya Rotası" /></div></div>
+      </div>
+      <div class="stop-row">
+          <div class="stop-left"><div class="snum lock"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#AAA" stroke-width="2.6" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg></div><div class="sline"></div></div>
+          <div class="stop-card"><div class="stop-photo2 blurred"><img src="frigya.png" alt="Frigya Rotası" /></div></div>
+      </div><div class="stop-info"><div class="stop-name hidden">● ● ● ● ● ●</div><div class="stop-desc">Bu durağı görmek için rotayı satın alın.</div></div></div>
+      </div>
+      <div class="stop-row">
+        <div class="stop-left"><div class="snum lock"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#AAA" stroke-width="2.6" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div class="sline"></div></div>
+        <div class="stop-card"><div class="stop-photo2 blurred"><img src="frigya.png" alt="Frigya Rotası" /></div></div>
+            
+      </div>
+      <div class="stop-row">
+          <div class="stop-left"><div class="snum lock"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#AAA" stroke-width="2.6" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg></div><div class="sline"></div></div>
+          <div class="stop-card"><div class="stop-photo2 blurred"><img src="frigya.png" alt="Frigya Rotası" /></div></div>
+      </div>
+      <div class="stop-row">
+          <div class="stop-left"><div class="snum lock"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#AAA" stroke-width="2.6" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg></div><div class="sline"></div></div>
+          <div class="stop-card"><div class="stop-photo2 blurred"><img src="frigya.png" alt="Frigya Rotası" /></div></div>
+      </div>
+      <div class="stop-row">
+          <div class="stop-left"><div class="snum done"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg></div></div>
+          <div class="stop-card" style="margin-bottom:0"><div class="stop-photo2"><img src="frigya.png" alt="Frigya Rotası" /></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom CTA -->
+  <div class="rd-bottom">
+    <button class="cta-btn">
+      <span>Rotayı Satın Al</span>
+      <div class="cta-right">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <span class="cta-price">₺ 49</span>
+      </div>
+    </button>
+  </div>
+
+</div>
+
+<!-- ═══════ BOTTOM NAV ═══════ -->
+<div class="bnav" id="bottom-nav">
+  <button class="bnav-item active" id="nav-home" onclick="showScreen('home')">
+    <svg class="bnav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF5722" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span class="bnav-label" style="color:#FF5722">Ana Sayfa</span>
+  </button>
+  <button class="bnav-item" id="nav-explore" onclick="showScreen('explore')">
+    <svg class="bnav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C0BCBA" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <span class="bnav-label">Keşfet</span>
+  </button>
+  <button class="bnav-item" id="nav-map" onclick="showScreen('map')">
+    <svg class="bnav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C0BCBA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+    <span class="bnav-label">Harita</span>
+  </button>
+  <button class="bnav-item" id="nav-profile" onclick="showScreen('profile')">
+    <svg class="bnav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C0BCBA" stroke-width="2.2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span class="bnav-label">Profil</span>
+  </button>
+</div>
+
+<script>
+let prevScreen = 'home';
+const navScreens = ['home','explore','map','profile'];
+
+function showScreen(id, from) {
+  // Hide all screens
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  // Show target
+  const target = document.getElementById('screen-' + id);
+  if(target) { target.classList.add('active'); target.querySelector('.scr-scroll')?.scrollTo(0,0); }
+
+  // Nav bar visibility
+  const bnav = document.getElementById('bottom-nav');
+  if(id === 'route-detail' || id === 'notifs') {
+    bnav.style.display = 'none';
+    prevScreen = from || (navScreens.includes(id) ? id : prevScreen);
+  } else {
+    bnav.style.display = 'flex';
+  }
+
+  // Track previous for back button
+  if(navScreens.includes(id)) prevScreen = id;
+
+  // Update nav active state
+  document.querySelectorAll('.bnav-item').forEach(b => {
+    b.classList.remove('active');
+    b.querySelectorAll('svg').forEach(s => { s.setAttribute('stroke','#C0BCBA'); });
+    b.querySelector('.bnav-label').style.color = '#C0BCBA';
+  });
+  const activeNav = document.getElementById('nav-' + id);
+  if(activeNav) {
+    activeNav.classList.add('active');
+    activeNav.querySelectorAll('svg').forEach(s => { s.setAttribute('stroke','#FF5722'); });
+    activeNav.querySelector('.bnav-label').style.color = '#FF5722';
+  }
+}
+
+function goBack() {
+  showScreen(prevScreen);
+}
+
+function selectCat(el) {
+  el.closest('.cat-wrap').querySelectorAll('.cat-chip').forEach(c => {
+    c.className = 'cat-chip inactive';
+  });
+  el.className = 'cat-chip active';
+}
+
+function switchTab(el, tabId) {
+  // Tab headers
+  el.closest('.profile-tabs').querySelectorAll('.p-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  // Tab contents
+  ['tab-rotalar','tab-rozetler','tab-favoriler'].forEach(id => {
+    const t = document.getElementById(id);
+    if(t) t.style.display = (id === tabId) ? (id === 'tab-rozetler' ? 'block' : 'block') : 'none';
+  });
+}
+
+// Route detail screen needs bottom nav hidden on load if it were active
+showScreen('home');
+</script>
+</body>
+</html>
